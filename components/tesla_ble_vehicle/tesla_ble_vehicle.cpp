@@ -739,7 +739,8 @@ namespace esphome
         case UniversalMessage_Domain_DOMAIN_INFOTAINMENT:
         {
           CarServer_Response carserver_response = CarServer_Response_init_default;
-          int return_code = tesla_ble_client_->parsePayloadCarServerResponse(&message.payload.protobuf_message_as_bytes, &carserver_response);
+          int return_code = tesla_ble_client_->parsePayloadCarServerResponse(&message.payload.protobuf_message_as_bytes, NULL, 0, NULL, &carserver_response);
+          // GAPS new library version now has 5 paramters so force unencrypted with 0 and NULLs are defaults
           if (return_code != 0)
           {
             ESP_LOGE(TAG, "Failed to parse incoming message");
