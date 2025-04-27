@@ -20,6 +20,14 @@ tesla_ble_vehicle:
     name: "Doors"
   is_charge_flap_open:
     name: "Charge flap"
+  shift_state:
+    name: "Shift state"
+  charge_state:
+    name: "Charge level"
+  odometer:
+    name: "Odometer"
+    filters:
+      - multiply: 0.01 # Odometer is in hundredths of a mile (can use this to convert to km)
 
 button:
   - platform: template
