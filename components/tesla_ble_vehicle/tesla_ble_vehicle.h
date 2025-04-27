@@ -8,6 +8,8 @@
 
 #include <esp_gattc_api.h>
 #include <esphome/components/binary_sensor/binary_sensor.h>
+#include <esphome/components/text_sensor/text_sensor.h>
+#include <esphome/components/sensor/sensor.h>
 #include <esphome/components/ble_client/ble_client.h>
 #include <esphome/components/esp32_ble_tracker/esp32_ble_tracker.h>
 #include <esphome/components/sensor/sensor.h>
@@ -27,6 +29,11 @@ namespace TeslaBLE
 
 typedef enum BLE_CarServer_VehicleAction_E
 {
+    GET_CHARGE_STATE,
+    GET_CLIMATE_STATE,
+    GET_DRIVE_STATE,
+    GET_LOCATION_STATE,
+    GET_CLOSURE_STATE,
     SET_CHARGING_SWITCH,
     SET_CHARGING_AMPS,
     SET_CHARGING_LIMIT
@@ -138,13 +145,13 @@ namespace esphome
             int nvs_load_session_info(Signatures_SessionInfo *session_info, const UniversalMessage_Domain domain);
             int nvs_initialize_private_key();
 
+            int handleInfoCarServerResponse (CarServer_Response carserver_response);
             int handleSessionInfoUpdate(UniversalMessage_RoutableMessage message, UniversalMessage_Domain domain);
             int handleVCSECVehicleStatus(VCSEC_VehicleStatus vehicleStatus);
 
             int wakeVehicle(void);
             int sendVCSECActionMessage(VCSEC_RKEAction_E action);
             int sendCarServerVehicleActionMessage(BLE_CarServer_VehicleAction action, int param);
-
             int sendSessionInfoRequest(UniversalMessage_Domain domain);
             int sendVCSECInformationRequest(void);
             void enqueueVCSECInformationRequest(bool force = false);
@@ -189,6 +196,49 @@ namespace esphome
                 isUnlockedSensor->set_has_state(has_state);
                 isUserPresentSensor->set_has_state(has_state);
             }
+            void setCarBatteryLevel (int battery_level)
+            {
+                ChargeStateSensor->publish_state (battery_level);
+            }
+
+            void setCarOdometer (int odometer)
+            {
+                OdometerStateSensor->publish_state (odometer);
+            }
+
+            void setCarShiftState (std::string shift_state)
+            {
+                ShiftStateSensor->publish_state (shift_state);
+            }
+
+            void set_text_sensor_shift_state (text_sensor::TextSensor *s)
+            {
+                ShiftStateSensor = static_cast<text_sensor::TextSensor *>(s);
+            }
+
+            void set_sensor_charge_state (sensor::Sensor *s)
+            {
+                ChargeStateSensor = static_cast<sensor::Sensor *>(s);
+            }
+
+            void set_sensor_odometer_state (sensor::Sensor *s)
+            {
+                OdometerStateSensor = static_cast<sensor::Sensor *>(s);
+            }
+
+            std::string lookup_shift_state (int shift_state)
+            {
+                switch (shift_state)
+                {
+                    case CarServer_ShiftState_Invalid_tag: return ("Invalid");
+                    case CarServer_ShiftState_P_tag: return ("P");
+                    case CarServer_ShiftState_R_tag: return ("R");
+                    case CarServer_ShiftState_N_tag: return ("N");
+                    case CarServer_ShiftState_D_tag: return ("D");
+                    case CarServer_ShiftState_SNA_tag: return ("SNA");
+                }
+                return ("Shift state look up error");
+            }
 
         protected:
             std::queue<BLERXChunk> ble_read_queue_;
@@ -211,6 +261,9 @@ namespace esphome
             binary_sensor::CustomBinarySensor *isUnlockedSensor;
             binary_sensor::CustomBinarySensor *isUserPresentSensor;
             binary_sensor::CustomBinarySensor *isChargeFlapOpenSensor;
+            text_sensor::TextSensor *ShiftStateSensor;
+            sensor::Sensor *ChargeStateSensor;
+            sensor::Sensor *OdometerStateSensor;
 
             std::vector<unsigned char> ble_read_buffer_;
 
