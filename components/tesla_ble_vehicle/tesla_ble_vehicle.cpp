@@ -107,7 +107,7 @@ namespace esphome
       if (now - current_command.started_at > COMMAND_TIMEOUT)
       {
         ESP_LOGE(TAG, "[%s] Command timed out after %d ms",
-                current_command.execute_name.c_str(), COMMAND_TIMEOUT);
+                 current_command.execute_name.c_str(), COMMAND_TIMEOUT);
         command_queue_.pop();
         return;
       }
@@ -859,16 +859,16 @@ namespace esphome
 
         // Start retrieval of data from car. Space them out evenlyish!
         CycleCounter++;
-        switch (CycleCounter % 10) {
+        switch (CycleCounter % 4) {
           case 1:
             sendCarServerVehicleActionMessage (GET_CHARGE_STATE, 0);
-            ESP_LOGD(TAG, "GET_CHARGE_STATE @ %d", TestOneOff);
+            ESP_LOGD(TAG, "GET_CHARGE_STATE @ %d", CycleCounter);
             break;
-          case 6:
+          case 2:
             sendCarServerVehicleActionMessage (GET_DRIVE_STATE, 0);
-            ESP_LOGD(TAG, "GET_DRIVE_STATE @ %d", TestOneOff);
+            ESP_LOGD(TAG, "GET_DRIVE_STATE @ %d", CycleCounter);
             break;
-          case 9:
+          case 3:
             CycleCounter = 0; // Reset - ensure can never overflow (in unlikely event runs forever!!)
             break;
         }
