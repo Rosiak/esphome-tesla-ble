@@ -294,6 +294,46 @@ void log_session_info_request(const char *tag, const UniversalMessage_SessionInf
     ESP_LOGD(tag, "    challenge: %s", req->challenge.bytes);
 }
 
+void log_vehicle_data (const char *tag, const CarServer_VehicleData *req)
+{
+    ESP_LOGD (tag, "VehicleData:");
+    ESP_LOGD (tag, "    has_charge_state: %s", req->has_charge_state ? "true" : "false");
+    if (req->has_charge_state)
+    {
+        ESP_LOGD (tag, "    charge state = %ld", req->charge_state.optional_battery_level.battery_level);
+    }
+    if (req->has_drive_state)
+    {
+        std::string gear = "Unknown";
+        switch (req->drive_state.shift_state.which_type)
+        {
+        case CarServer_ShiftState_Invalid_tag:
+            gear = "Invalid";
+            break;
+        case CarServer_ShiftState_P_tag:
+            gear = "P";
+            break;
+        case CarServer_ShiftState_R_tag:
+            gear = "R";
+            break;
+        case CarServer_ShiftState_N_tag:
+            gear = "N";
+            break;
+        case CarServer_ShiftState_D_tag:
+            gear = "D";
+            break;
+        case CarServer_ShiftState_SNA_tag:
+            gear = "SNA";
+            break;
+        default:
+            gear = "Default";
+            break;
+        }
+        ESP_LOGD (tag, "    has_drive_state: ");
+        ESP_LOGD (tag, "      drive_state: %s", gear.c_str());
+    }
+}
+
 void log_session_info(const char *tag, const Signatures_SessionInfo *req)
 {
     ESP_LOGD(tag, "SessionInfo:");
@@ -526,10 +566,10 @@ void log_vssec_whitelist_operation_status(const char *tag, const VCSEC_Whitelist
 
 void log_vcsec_command_status(const char *tag, const VCSEC_CommandStatus *msg)
 {
-    ESP_LOGI(tag, "VCSEC_CommandStatus:");
-    ESP_LOGI(tag, "  commandStatus: %s", vcsec_operation_status_to_string(msg->operationStatus));
+    ESP_LOGD(tag, "VCSEC_CommandStatus:");
+    ESP_LOGD(tag, "  commandStatus: %s", vcsec_operation_status_to_string(msg->operationStatus));
 
-    ESP_LOGI(tag, "  which_sub_message: %d", msg->which_sub_message);
+    ESP_LOGD(tag, "  which_sub_message: %d", msg->which_sub_message);
     switch (msg->which_sub_message)
     {
     case VCSEC_CommandStatus_signedMessageStatus_tag:
@@ -582,16 +622,33 @@ void log_carserver_response(const char *tag, const CarServer_Response *msg)
             switch (msg->actionStatus.result_reason.which_reason)
             {
             case CarServer_ResultReason_plain_text_tag:
-                ESP_LOGD(tag, "    reason: %s", msg->actionStatus.result_reason.reason.plain_text);
+                ESP_LOGI(tag, "    reason: %s", msg->actionStatus.result_reason.reason.plain_text);
                 break;
             default:
-                ESP_LOGD(tag, "    unknown reason");
+                ESP_LOGI(tag, "    unknown reason");
             }
         }
     }
+    ESP_LOGD (tag, "  vehicleData:");
+    log_vehicle_data (tag, &msg->response_msg.vehicleData);
+    ESP_LOGD (tag, "    has_charge_state: %d", msg->response_msg.vehicleData.has_charge_state);
+    ESP_LOGD (tag, "    charge state = %ld", msg->response_msg.vehicleData.charge_state.optional_battery_level.battery_level);
+    ESP_LOGD (tag, "    has_climate_state: %d", msg->response_msg.vehicleData.has_climate_state);
+    ESP_LOGD (tag, "    has_drive_state: %d", msg->response_msg.vehicleData.has_drive_state);
+    ESP_LOGD (tag, "    has_location_state: %d", msg->response_msg.vehicleData.has_location_state);
+    ESP_LOGD (tag, "    has_closures_state: %d", msg->response_msg.vehicleData.has_closures_state);
+    ESP_LOGD (tag, "    has_charge_schedule_state: %d", msg->response_msg.vehicleData.has_charge_schedule_state);
+    ESP_LOGD (tag, "    has_preconditioning_schedule_state: %d", msg->response_msg.vehicleData.has_preconditioning_schedule_state);
+    ESP_LOGD (tag, "    has_tire_pressure_state: %d", msg->response_msg.vehicleData.has_tire_pressure_state);
+    ESP_LOGD (tag, "    has_media_state: %d", msg->response_msg.vehicleData.has_media_state);
+    ESP_LOGD (tag, "    has_media_detail_state: %d", msg->response_msg.vehicleData.has_media_detail_state);
+    ESP_LOGD (tag, "    has_software_update_state: %d", msg->response_msg.vehicleData.has_software_update_state);
+    ESP_LOGD (tag, "    has_parental_controls_state: %d", msg->response_msg.vehicleData.has_parental_controls_state);
 
     switch (msg->which_response_msg)
     {
+    case CarServer_Response_vehicleData_tag:
+        break;
     case CarServer_Response_getSessionInfoResponse_tag:
         ESP_LOGI(tag, "  getSessionInfoResponse:");
         log_session_info(tag, &msg->response_msg.getSessionInfoResponse);
@@ -600,8 +657,8 @@ void log_carserver_response(const char *tag, const CarServer_Response *msg)
         ESP_LOGI(tag, "  getNearbyChargingSites:");
         break;
     case CarServer_Response_ping_tag:
-        ESP_LOGD(tag, "  ping:");
-        ESP_LOGD(tag, "    ping: %ld", msg->response_msg.ping.ping_id);
+        ESP_LOGI(tag, "  ping:");
+        ESP_LOGI(tag, "    ping: %ld", msg->response_msg.ping.ping_id);
         break;
     default:
         // do nothing
