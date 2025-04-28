@@ -192,9 +192,17 @@ namespace esphome
             // set sensors to unknown (e.g. when vehicle is disconnected)
             void setSensors(bool has_state)
             {
+                // Binary sensors (0 or 1) need a "fiddle" to get unknown
                 isAsleepSensor->set_has_state(has_state);
                 isUnlockedSensor->set_has_state(has_state);
                 isUserPresentSensor->set_has_state(has_state);
+                // Non-binary sensors cater naturally for unknown
+                if (!has_state)
+                {
+                    ChargeStateSensor->publish_state (NAN);
+                    OdometerStateSensor->publish_state (NAN);
+                    ShiftStateSensor->publish_state ("Unknown");
+                }
             }
             void setCarBatteryLevel (int battery_level)
             {
