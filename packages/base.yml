@@ -15,10 +15,10 @@ esphome:
   friendly_name: ${friendly_name}
   comment: ${device_description}
   project:
-    name: yoziru.esphome-tesla-ble
-    version: "2024.8.1"
+    name: PedroKTFC.esphome-tesla-ble
+    version: "2025.0.1"
   libraries:
-    - https://github.com/yoziru/tesla-ble.git#update-vehicle-protocol-7457011
+    - https://github.com/PedroKTFC/tesla-ble.git#update-vehicle-protocol-7457011
 
 logger:
   level: INFO
