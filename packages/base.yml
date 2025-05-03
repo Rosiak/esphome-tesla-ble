@@ -18,8 +18,7 @@ esphome:
     name: PedroKTFC.esphome-tesla-ble
     version: "2025.0.1"
   libraries:
-    - https://github.com/PedroKTFC/tesla-ble.git#update-vehicle-protocol-7457011
-
+    - https://github.com/PedroKTFC/tesla-ble.git
 logger:
   level: INFO
 
