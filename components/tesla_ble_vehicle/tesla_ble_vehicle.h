@@ -201,8 +201,6 @@ namespace esphome
                 {
                     ChargeStateSensor->publish_state (NAN);
                     OdometerStateSensor->publish_state (NAN);
-                    ChargeCurrentStateSensor->publish_state (NAN);
-                    MaxSocStateSensor->publish_state (NAN);
                     ShiftStateSensor->publish_state ("Unknown");
                 }
             }
@@ -214,16 +212,6 @@ namespace esphome
             void setCarOdometer (int odometer)
             {
                 OdometerStateSensor->publish_state (odometer);
-            }
-
-            void setChargeCurrent (int current)
-            {
-                ChargeCurrentStateSensor->publish_state (current);
-            }
-
-            void setMaxSoc (int max)
-            {
-                MaxSocStateSensor->publish_state (max);
             }
 
             void setCarShiftState (std::string shift_state)
@@ -239,16 +227,6 @@ namespace esphome
             void set_sensor_charge_state (sensor::Sensor *s)
             {
                 ChargeStateSensor = static_cast<sensor::Sensor *>(s);
-            }
-
-            void set_sensor_charge_current_state (sensor::Sensor *s)
-            {
-                ChargeCurrentStateSensor = static_cast<sensor::Sensor *>(s);
-            }
-
-            void set_sensor_max_soc_state (sensor::Sensor *s)
-            {
-                MaxSocStateSensor = static_cast<sensor::Sensor *>(s);
             }
 
             void set_sensor_odometer_state (sensor::Sensor *s)
@@ -294,8 +272,6 @@ namespace esphome
             text_sensor::TextSensor *ShiftStateSensor;
             sensor::Sensor *ChargeStateSensor;
             sensor::Sensor *OdometerStateSensor;
-            sensor::Sensor *ChargeCurrentStateSensor;
-            sensor::Sensor *MaxSocStateSensor;
 
             std::vector<unsigned char> ble_read_buffer_;
 
