@@ -20,6 +20,8 @@ CONF_IS_CHARGE_FLAP_OPEN = "is_charge_flap_open"
 CONF_SHIFT_STATE = "shift_state"
 CONF_CHARGE_STATE = "charge_state"
 CONF_ODOMETER = "odometer"
+CONF_CHARGE_CURRENT = "charge_current"
+CONF_MAX_SOC = "max_soc"
 
 CONFIG_SCHEMA = (
     cv.Schema(
@@ -43,11 +45,20 @@ CONFIG_SCHEMA = (
                 icon="mdi:car-shift-pattern"
             ).extend(),
             cv.Optional(CONF_CHARGE_STATE): sensor.sensor_schema(
-                icon="mdi:battery-medium", device_class=sensor.DEVICE_CLASS_BATTERY
+                icon="mdi:battery-medium", device_class=sensor.DEVICE_CLASS_BATTERY,
+                unit_of_measurement="%"
             ).extend(),
             cv.Optional(CONF_ODOMETER): sensor.sensor_schema(
                 icon="mdi:counter", device_class=sensor.DEVICE_CLASS_DISTANCE,
                 accuracy_decimals=2, unit_of_measurement="miles"
+            ).extend(),
+            cv.Optional(CONF_CHARGE_CURRENT): sensor.sensor_schema(
+                icon="mdi:current-ac", device_class=sensor.DEVICE_CLASS_CURRENT,
+                unit_of_measurement="A"
+            ).extend(),
+            cv.Optional(CONF_MAX_SOC): sensor.sensor_schema(
+                icon="mdi:battery-lock", device_class=sensor.DEVICE_CLASS_ENERGY_STORAGE,
+                unit_of_measurement="%"
             ).extend(),
         }
     )
@@ -98,3 +109,13 @@ async def to_code(config):
         conf = config[CONF_ODOMETER]
         ss = await sensor.new_sensor(conf)
         cg.add(var.set_sensor_odometer_state(ss))
+
+    if CONF_CHARGE_CURRENT in config:
+        conf = config[CONF_CHARGE_CURRENT]
+        ss = await sensor.new_sensor(conf)
+        cg.add(var.set_sensor_charge_current_state(ss))
+
+    if CONF_MAX_SOC in config:
+        conf = config[CONF_MAX_SOC]
+        ss = await sensor.new_sensor(conf)
+        cg.add(var.set_sensor_max_soc_state(ss))
