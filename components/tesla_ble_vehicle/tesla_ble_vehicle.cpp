@@ -1284,24 +1284,24 @@ namespace esphome
         switch (action)
         {
         case GET_CHARGE_STATE:
-          return_code = tesla_ble_client_->buildCarServerGetVehicleDataMessage(
-              message_buffer, &message_length);
+          return_code = tesla_ble_client_->buildCarServerGetVehicleDataMessage (
+              message_buffer, &message_length, CarServer_GetVehicleData_getChargeState_tag);
           break;
         case GET_CLIMATE_STATE:
-          return_code = tesla_ble_client_->buildCarServerGetClimateStateMessage (
-              message_buffer, &message_length);
+           return_code = tesla_ble_client_->buildCarServerGetVehicleDataMessage (
+              message_buffer, &message_length, CarServer_GetVehicleData_getClimateState_tag);
           break;
         case GET_DRIVE_STATE:
-          return_code = tesla_ble_client_->buildCarServerGetDriveStateMessage (
-              message_buffer, &message_length);
+            return_code = tesla_ble_client_->buildCarServerGetVehicleDataMessage (
+              message_buffer, &message_length, CarServer_GetVehicleData_getDriveState_tag);
           break;
         case GET_LOCATION_STATE:
-          return_code = tesla_ble_client_->buildCarServerGetLocationStateMessage (
-              message_buffer, &message_length);
+            return_code = tesla_ble_client_->buildCarServerGetVehicleDataMessage (
+              message_buffer, &message_length, CarServer_GetVehicleData_getLocationState_tag);
           break;
         case GET_CLOSURE_STATE:
-          return_code = tesla_ble_client_->buildCarServerGetClosureStateMessage (
-              message_buffer, &message_length);
+            return_code = tesla_ble_client_->buildCarServerGetVehicleDataMessage (
+              message_buffer, &message_length, CarServer_GetVehicleData_getClosuresState_tag);
           break;
         case SET_CHARGING_SWITCH:
           return_code = tesla_ble_client_->buildChargingSwitchMessage(
@@ -1462,6 +1462,8 @@ namespace esphome
             *   The former seems to correspond to that provided by the Tesla app and in the car and so is used here.
             */
             setCarBatteryLevel (carserver_response.response_msg.vehicleData.charge_state.optional_usable_battery_level.usable_battery_level);
+            setChargeCurrent (carserver_response.response_msg.vehicleData.charge_state.optional_charger_actual_current.charger_actual_current);
+            setMaxSoc (carserver_response.response_msg.vehicleData.charge_state.optional_charge_limit_soc.charge_limit_soc);
           }
           else if (carserver_response.response_msg.vehicleData.has_drive_state)
           {
