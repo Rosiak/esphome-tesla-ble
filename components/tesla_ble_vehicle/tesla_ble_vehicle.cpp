@@ -28,6 +28,7 @@ namespace esphome
     bool PreviousAsleepState = false;
     bool JustWoken = false;
     bool OneOffUpdate = false;
+    bool CarIsCharging = false;
     void TeslaBLEVehicle::dump_config()
     {
       ESP_LOGCONFIG(TAG, "Tesla BLE Vehicle:");
@@ -50,6 +51,7 @@ namespace esphome
       PreviousAsleepState = false;
       JustWoken = false;
       OneOffUpdate = false;
+      CarIsCharging = false;
       this->initializeFlash();
       this->openNVSHandle();
       this->initializePrivateKey();
@@ -880,28 +882,31 @@ namespace esphome
           JustWoken = true;
         }
         PreviousAsleepState = this->isAsleepSensor->state;
-        if (JustStarted or JustWoken or OneOffUpdate or this->isUnlockedSensor->state or this->isUserPresentSensor->state)
+        if (JustStarted or JustWoken or OneOffUpdate or CarIsCharging or this->isUnlockedSensor->state or this->isUserPresentSensor->state)
         {
-          time_t timestamp;
-          time (&timestamp);
-          setLastUpdateState (ctime(&timestamp));
           // Start retrieval of data from car. Space them out evenlyish!
           switch (CycleCounter % 4)
           {
             case 1:
-            sendCarServerVehicleActionMessage (GET_CHARGE_STATE, 0);
-            ESP_LOGD(TAG, "GET_CHARGE_STATE @ %d", CycleCounter);
-            break;
+              sendCarServerVehicleActionMessage (GET_CHARGE_STATE, 0);
+              ESP_LOGD(TAG, "GET_CHARGE_STATE @ %d", CycleCounter);
+              break;
             case 2:
-            sendCarServerVehicleActionMessage (GET_DRIVE_STATE, 0);
-            ESP_LOGD(TAG, "GET_DRIVE_STATE @ %d", CycleCounter);
-            break;
+              sendCarServerVehicleActionMessage (GET_DRIVE_STATE, 0);
+              ESP_LOGD(TAG, "GET_DRIVE_STATE @ %d", CycleCounter);
+              break;
             case 3:
-            CycleCounter = 0; // Reset - ensure can never overflow (in unlikely event runs forever!!)
-            JustStarted = false; // Have collected one set of data after startup
-            JustWoken = false; // Clear once a single cycle of data collection completed
-            OneOffUpdate = false; // Clear once a single cycle of data collection completed
-            break;
+              CycleCounter = 0; // Reset - ensure can never overflow (in unlikely event runs forever!!)
+              if (this->isAsleepSensor->state == false)
+              { // Only reset if car has been awake and so scans performed
+                JustStarted = false; // Have collected one set of data after startup
+                JustWoken = false; // Clear once a single cycle of data collection completed
+                OneOffUpdate = false; // Clear once a single cycle of data collection completed
+              }
+              time_t timestamp;
+              time (&timestamp);
+              setLastUpdateState (ctime(&timestamp));
+              break;
           }
           CycleCounter++;
       }
@@ -1340,6 +1345,11 @@ namespace esphome
         case SET_CHARGING_SWITCH:
           return_code = tesla_ble_client_->buildChargingSwitchMessage(
               static_cast<bool>(param), message_buffer, &message_length);
+          // If charging has been requested, enable continuous polling
+          if (param == 1)
+          {
+            CarIsCharging = true;
+          }
           break;
         case SET_CHARGING_AMPS:
           return_code = tesla_ble_client_->buildChargingAmpsMessage(
@@ -1499,6 +1509,17 @@ namespace esphome
             setChargeCurrent (carserver_response.response_msg.vehicleData.charge_state.optional_charger_actual_current.charger_actual_current);
             setMaxSoc (carserver_response.response_msg.vehicleData.charge_state.optional_charge_limit_soc.charge_limit_soc);
             setBatteryRange (carserver_response.response_msg.vehicleData.charge_state.optional_battery_range.battery_range);
+            switch (carserver_response.response_msg.vehicleData.charge_state.charging_state.which_type)
+            {
+              case CarServer_ChargeState_ChargingState_Starting_tag:
+              case CarServer_ChargeState_ChargingState_Charging_tag:
+                CarIsCharging = true;
+                ESP_LOGW (TAG, "Car is charging has been set true");
+                break;
+              default:
+                CarIsCharging = false;
+                ESP_LOGW (TAG, "Car is charging has been set false");
+            }
             std::string charging_state_text = lookup_charging_state (carserver_response.response_msg.vehicleData.charge_state.charging_state.which_type);
             setChargingState (charging_state_text.c_str());
           }
@@ -1510,7 +1531,7 @@ namespace esphome
           }
           break;
         default:
-          ESP_LOGD (TAG, "[handleInfoCarServerResponse] Non vehicle data response.");
+          ESP_LOGW (TAG, "[handleInfoCarServerResponse] Non vehicle data response.");
       }
       return 0;
     }
