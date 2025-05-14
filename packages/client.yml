@@ -12,6 +12,10 @@ tesla_ble_vehicle:
   id: tesla_ble_vehicle_id
   vin: $tesla_vin
   update_interval: 1min # default
+  post_wake_poll_time: 300 # How long to poll for data after car awakes (s)
+  poll_data_period: 60 # Normal period when polling for data when not asleep (s)
+  poll_charging_period: 2 # Period to poll for data when charging (s)
+
   is_asleep:
     name: "Asleep"
   is_user_present:
