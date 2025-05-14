@@ -23,12 +23,6 @@ namespace esphome
 {
   namespace tesla_ble_vehicle
   {
-    int CycleCounter = 1;
-    bool JustStarted = true;
-    bool PreviousAsleepState = false;
-    bool JustWoken = false;
-    bool OneOffUpdate = false;
-    bool CarIsCharging = false;
     void TeslaBLEVehicle::dump_config()
     {
       ESP_LOGCONFIG(TAG, "Tesla BLE Vehicle:");
@@ -46,12 +40,6 @@ namespace esphome
       this->read_uuid_ = espbt::ESPBTUUID::from_raw(READ_UUID);
       this->write_uuid_ = espbt::ESPBTUUID::from_raw(WRITE_UUID);
 
-      CycleCounter = 1;
-      JustStarted = true;
-      PreviousAsleepState = false;
-      JustWoken = false;
-      OneOffUpdate = false;
-      CarIsCharging = false;
       this->initializeFlash();
       this->openNVSHandle();
       this->initializePrivateKey();
@@ -125,6 +113,17 @@ namespace esphome
       {
       case BLECommandState::IDLE:
         ESP_LOGI(TAG, "[%s] Preparing command..", current_command.execute_name.c_str());
+        /*
+         * If the car is asleep and the command is an Infotainment data request (identified by a "get" in the execute_name
+         * field), then ignore the request as we don't want to risk waking the car.
+        */
+        if (this->isAsleepSensor->state && (current_command.execute_name.find("get") == 0))
+        {
+          ESP_LOGI(TAG, "[%s] Car is asleep, don't wake for a 'get' command",
+                   current_command.execute_name.c_str());
+          command_queue_.pop();
+          return;
+        }
         current_command.started_at = now;
         switch (current_command.domain)
         {
@@ -868,48 +867,81 @@ namespace esphome
         enqueueVCSECInformationRequest();
         /*
         *	INFOTAINMENT data can only be collected when the car is awake, while VCSEC data also when the car is asleep.
-        *	Therefore we trigger collection of INFOTAINMENT data under the following circumstances:
-        *	- on startup. This might wake the car but we want the entities to have initial values. Do only one set of reads.
-        *	- whenever the car wakes up. However, depending on the wake we either read once or continually:
-        *	  - if the car woke up of its own accord, do one set of reads and allow the car to go back to sleep.
-        *	  - if the car was woken by someone getting in the car (door unlocked or user present), then we want to
-        *		cycle round continuously to have the data as up to date as possible (eg shift state which some people
-        *		want to use to trigger the opening of their electric gate).
+        *	Therefore we trigger polling for INFOTAINMENT data under the following circumstances:
+        *	- on startup. This might wake the car but we want the entities to have initial values.
+        *	- whenever the car wakes up. However, depending on the wake:
+        *	  - if the car woke up of its own accord, poll for post_wake_poll_time s every poll_data_period s and allow the car to go back to sleep.
+        *	  - if the car was woken by someone getting in the car (door unlocked or user present), or the car is charging,
+        *     then poll continuously at update_interval to have the data as up to date as possible (eg shift state which some people
+        *		  want to use to trigger the opening of their electric gate) until the trigger state ends.
         */
-        if ((this->isAsleepSensor->state == false) and (PreviousAsleepState == true))
+        if (esp32_just_started_ == 2) // Allow 2 cycles before starting so everything initialised
         {
-          // Car has just woken
-          JustWoken = true;
+          // If the ESP32 has just started, do a wake even if already awake to ensure get an initial poll of its data
+          wakeVehicle(); // wake will cause poll assuming car available
+          esp32_just_started_++;
+        } else 
+        {
+          esp32_just_started_++;
         }
-        PreviousAsleepState = this->isAsleepSensor->state;
-        if (JustStarted or JustWoken or OneOffUpdate or CarIsCharging or this->isUnlockedSensor->state or this->isUserPresentSensor->state)
+        if (!this->isAsleepSensor->state and previous_asleep_state_) // Remember, true means asleep
         {
-          // Start retrieval of data from car. Space them out evenlyish!
-          switch (CycleCounter % 4)
-          {
-            case 1:
-              sendCarServerVehicleActionMessage (GET_CHARGE_STATE, 0);
-              ESP_LOGD(TAG, "GET_CHARGE_STATE @ %d", CycleCounter);
-              break;
-            case 2:
-              sendCarServerVehicleActionMessage (GET_DRIVE_STATE, 0);
-              ESP_LOGD(TAG, "GET_DRIVE_STATE @ %d", CycleCounter);
-              break;
-            case 3:
-              CycleCounter = 0; // Reset - ensure can never overflow (in unlikely event runs forever!!)
-              if (this->isAsleepSensor->state == false)
-              { // Only reset if car has been awake and so scans performed
-                JustStarted = false; // Have collected one set of data after startup
-                JustWoken = false; // Clear once a single cycle of data collection completed
-                OneOffUpdate = false; // Clear once a single cycle of data collection completed
-              }
-              time_t timestamp;
-              time (&timestamp);
-              setLastUpdateState (ctime(&timestamp));
-              break;
+          // Car has just woken, also record time it happened so can time out after configured time
+          car_just_woken_ = 1;
+          car_wake_time_ = millis();
+        }
+        if (this->isAsleepSensor->state and !previous_asleep_state_) // Car has just gone to sleep
+        { // Belt & braces clear poll triggers if car is asleep
+          car_is_charging_ = 0;
+          setInfotainmentSensors (false);
+        }
+        previous_asleep_state_ = this->isAsleepSensor->state;
+
+        ESP_LOGW (TAG, "Reading INFOTAINMENT, previous_asleep_state_=%d, car_just_woken_=%d, car_is_charging_=%d, Unlocked=%d, User=%d",
+                  previous_asleep_state_, car_just_woken_, car_is_charging_, this->isUnlockedSensor->state, this->isUserPresentSensor->state);
+        
+        //if (car_just_woken_ or OneOffUpdate or car_is_charging_ or this->isUnlockedSensor->state or this->isUserPresentSensor->state)
+        if (one_off_update_ or this->isUnlockedSensor->state or this->isUserPresentSensor->state)
+        { // For these fastest poll rate is used
+          do_poll_ = true;
+        }
+        else if (car_is_charging_ != 0)
+        { // otherwise charging polls have priority
+          if (car_is_charging_ == 1)
+          { // Do a poll as soon as notice car is charging
+            do_poll_ = true;
+            car_is_charging_ = 2;
           }
-          CycleCounter++;
-      }
+          else if (((millis() - last_infotainment_poll_time_) > poll_charging_period_))
+          { // subsequent polls on the configured repeat period
+            do_poll_ = true;
+          }
+        }
+        else if (car_just_woken_ != 0)
+        { // Just woken polls lowest priority
+          if (car_just_woken_ == 1)
+          { // Do a poll as soon as the car awakes
+            do_poll_ = true;
+            car_just_woken_ = 2;
+          }
+          else if (((millis() - last_infotainment_poll_time_) > poll_data_period_))
+          { // subsequent polls on the configured repeat period
+            do_poll_ = true;
+          }
+        }
+        if (do_poll_)
+        {
+          // Start retrieval of data from car.
+          last_infotainment_poll_time_ = millis();
+          sendCarServerVehicleActionMessage (GET_CHARGE_STATE, 0);
+          sendCarServerVehicleActionMessage (GET_DRIVE_STATE, 0);
+          if ((car_just_woken_ != 0) and ((millis() - car_wake_time_) > post_wake_poll_time_))
+          {
+            car_just_woken_ = 0;
+          }
+          one_off_update_ = false; // Clear once a single cycle of data collection completed
+          do_poll_ = false;
+        }
         return;
       }
     }
@@ -1065,6 +1097,14 @@ namespace esphome
     void TeslaBLEVehicle::set_vin(const char *vin)
     {
       tesla_ble_client_->setVIN(vin);
+    }
+
+    void TeslaBLEVehicle::load_polling_parameters (const int post_wake_poll_time, const int poll_data_period, const int poll_charging_period)
+    {
+      // All timings are in milliseconds
+      post_wake_poll_time_ = post_wake_poll_time * 1000;
+      poll_data_period_ = poll_data_period * 1000;
+      poll_charging_period_ = poll_charging_period * 1000;
     }
 
     void TeslaBLEVehicle::regenerateKey()
@@ -1261,7 +1301,7 @@ namespace esphome
       std::string action_str = "data update";
       if (force)
       {
-        OneOffUpdate = true;
+        one_off_update_ = true;
         action_str = "data update | forced";
       }
 
@@ -1348,7 +1388,7 @@ namespace esphome
           // If charging has been requested, enable continuous polling
           if (param == 1)
           {
-            CarIsCharging = true;
+            car_is_charging_ = true;
           }
           break;
         case SET_CHARGING_AMPS:
@@ -1499,6 +1539,8 @@ namespace esphome
       switch (carserver_response.which_response_msg)
       {
         case CarServer_Response_vehicleData_tag:
+          time_t timestamp;
+          time (&timestamp);
           if (carserver_response.response_msg.vehicleData.has_charge_state)
           {
             /*
@@ -1513,21 +1555,21 @@ namespace esphome
             {
               case CarServer_ChargeState_ChargingState_Starting_tag:
               case CarServer_ChargeState_ChargingState_Charging_tag:
-                CarIsCharging = true;
-                ESP_LOGW (TAG, "Car is charging has been set true");
+                if (car_is_charging_ == 0) {car_is_charging_ = 1;} // Set to 1 when charging starts to trigger immediate poll
                 break;
               default:
-                CarIsCharging = false;
-                ESP_LOGW (TAG, "Car is charging has been set false");
+                car_is_charging_ = 0;
             }
             std::string charging_state_text = lookup_charging_state (carserver_response.response_msg.vehicleData.charge_state.charging_state.which_type);
             setChargingState (charging_state_text.c_str());
+            setLastUpdateState (ctime(&timestamp));
           }
           else if (carserver_response.response_msg.vehicleData.has_drive_state)
           {
             std::string shift_state_text = lookup_shift_state (carserver_response.response_msg.vehicleData.drive_state.shift_state.which_type);
             setCarShiftState (shift_state_text.c_str());
             setCarOdometer (carserver_response.response_msg.vehicleData.drive_state.optional_odometer_in_hundredths_of_a_mile.odometer_in_hundredths_of_a_mile);
+            setLastUpdateState (ctime(&timestamp));
           }
           break;
         default:
