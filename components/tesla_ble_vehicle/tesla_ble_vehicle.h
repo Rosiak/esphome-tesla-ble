@@ -125,6 +125,17 @@ namespace esphome
                                 public ble_client::BLEClientNode
         {
         public:
+            int post_wake_poll_time_;
+            int poll_data_period_;
+            int poll_charging_period_;
+            int car_just_woken_ = 0;
+            bool previous_asleep_state_ = false;
+            bool one_off_update_ = false;
+            int car_wake_time_;
+            int last_infotainment_poll_time_;
+            int esp32_just_started_ = 0;
+            int car_is_charging_ = 0;
+            bool do_poll_ = false;
             TeslaBLEVehicle();
             void setup() override;
             void loop() override;
@@ -133,6 +144,7 @@ namespace esphome
                                      esp_ble_gattc_cb_param_t *param) override;
             void dump_config() override;
             void set_vin(const char *vin);
+            void load_polling_parameters (const int post_wake_poll_time, const int poll_data_period, const int poll_charging_period);
             void process_command_queue();
             void process_response_queue();
             void process_ble_read_queue();
@@ -196,18 +208,22 @@ namespace esphome
                 isAsleepSensor->set_has_state(has_state);
                 isUnlockedSensor->set_has_state(has_state);
                 isUserPresentSensor->set_has_state(has_state);
+            }
+
+            void setInfotainmentSensors (bool state)
+            {
                 // Non-binary sensors cater naturally for unknown
-                if (!has_state)
-                {/*
+                if (!state)
+                {
                     ChargeStateSensor->publish_state (NAN);
                     OdometerStateSensor->publish_state (NAN);
                     ChargeCurrentStateSensor->publish_state (NAN);
                     MaxSocStateSensor->publish_state (NAN);
                     ShiftStateSensor->publish_state ("Unknown");
                     ChargingStateSensor->publish_state ("Unknown");
-                    LastUpdateStateSensor->publish_state ("Unknown");
                     BatteryRangeStateSensor->publish_state (NAN);
-                */}
+                }
+
             }
             void setCarBatteryLevel (int battery_level)
             {
