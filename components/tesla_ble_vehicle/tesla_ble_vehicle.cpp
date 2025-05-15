@@ -893,7 +893,6 @@ namespace esphome
         if (this->isAsleepSensor->state and !previous_asleep_state_) // Car has just gone to sleep
         { // Belt & braces clear poll triggers if car is asleep
           car_is_charging_ = 0;
-          setInfotainmentSensors (false);
         }
         previous_asleep_state_ = this->isAsleepSensor->state;
 
@@ -1699,6 +1698,7 @@ namespace esphome
 
         // set binary sensors to unknown
         this->setSensors(false);
+        this->setInfotainmentSensors (false);
         this->setChargeFlapHasState(false);
 
         // TODO: charging switch off
