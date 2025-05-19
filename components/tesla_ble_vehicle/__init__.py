@@ -27,6 +27,7 @@ CONF_CHARGING_STATE = "charging_state"
 CONF_LAST_UPDATE = "last_update"
 CONF_POST_WAKE_POLL_TIME = "post_wake_poll_time" # How long to poll for data after car awakes (s)
 CONF_POLL_DATA_PERIOD = "poll_data_period" # Normal period when polling for data when not asleep (s)
+CONF_POLL_ASLEEP_PERIOD = "poll_asleep_period" # Period to poll for data when asleep (s)
 CONF_POLL_CHARGING_PERIOD = "poll_charging_period" # Period to poll for data when charging (s)
 
 CONFIG_SCHEMA = (
@@ -37,6 +38,7 @@ CONFIG_SCHEMA = (
             cv.Required(CONF_VIN): cv.string,
             cv.Optional(CONF_POST_WAKE_POLL_TIME): cv.uint16_t,
             cv.Optional(CONF_POLL_DATA_PERIOD): cv.uint16_t,
+            cv.Optional(CONF_POLL_ASLEEP_PERIOD): cv.uint16_t,
             cv.Optional(CONF_POLL_CHARGING_PERIOD): cv.uint16_t,
             cv.Optional(CONF_IS_ASLEEP): binary_sensor.binary_sensor_schema(
                 icon="mdi:sleep"
@@ -93,7 +95,8 @@ async def to_code(config):
     await ble_client.register_ble_node(var, config)
 
     cg.add(var.set_vin(config[CONF_VIN]))
-    cg.add(var.load_polling_parameters(config[CONF_POST_WAKE_POLL_TIME], config[CONF_POLL_DATA_PERIOD], config[CONF_POLL_CHARGING_PERIOD]))
+    cg.add(var.load_polling_parameters(config[CONF_POST_WAKE_POLL_TIME], config[CONF_POLL_DATA_PERIOD],
+           config[CONF_POLL_ASLEEP_PERIOD], config[CONF_POLL_CHARGING_PERIOD]))
 
     if CONF_IS_ASLEEP in config:
         conf = config[CONF_IS_ASLEEP]
