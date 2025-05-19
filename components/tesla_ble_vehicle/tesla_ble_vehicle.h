@@ -127,6 +127,7 @@ namespace esphome
         public:
             int post_wake_poll_time_;
             int poll_data_period_;
+            int poll_asleep_period_;
             int poll_charging_period_;
             int car_just_woken_ = 0;
             bool previous_asleep_state_ = false;
@@ -144,7 +145,7 @@ namespace esphome
                                      esp_ble_gattc_cb_param_t *param) override;
             void dump_config() override;
             void set_vin(const char *vin);
-            void load_polling_parameters (const int post_wake_poll_time, const int poll_data_period, const int poll_charging_period);
+            void load_polling_parameters (const int post_wake_poll_time, const int poll_data_period, const int poll_asleep_period, const int poll_charging_period);
             void process_command_queue();
             void process_response_queue();
             void process_ble_read_queue();
