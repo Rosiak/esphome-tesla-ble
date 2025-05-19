@@ -870,10 +870,14 @@ namespace esphome
         *	Therefore we trigger polling for INFOTAINMENT data under the following circumstances:
         *	- on startup. This might wake the car but we want the entities to have initial values.
         *	- whenever the car wakes up. However, depending on the wake:
-        *	  - if the car woke up of its own accord, poll for post_wake_poll_time s every poll_data_period s and allow the car to go back to sleep.
+        *	  - if the car woke up of its own accord, poll for post_wake_poll_time s every poll_data_period s and allow the car to
+        *     go back to sleep.
         *	  - if the car was woken by someone getting in the car (door unlocked or user present), or the car is charging,
         *     then poll continuously at update_interval to have the data as up to date as possible (eg shift state which some people
         *		  want to use to trigger the opening of their electric gate) until the trigger state ends.
+        *   - Otherwise we poll the Infotainment system every poll_asleep_period s in case the car was charging, charging then stops
+        *     but resumes while the car has been awake continuously (otherwise we would never notice it's charging again). This period
+        *     should be chosen to be long enough so that the car will fall asleep if nothing else is happening to keep it awake.
         */
         if (esp32_just_started_ == 2) // Allow 2 cycles before starting so everything initialised
         {
@@ -896,7 +900,7 @@ namespace esphome
         }
         previous_asleep_state_ = this->isAsleepSensor->state;
 
-        ESP_LOGW (TAG, "Reading INFOTAINMENT, previous_asleep_state_=%d, car_just_woken_=%d, car_is_charging_=%d, Unlocked=%d, User=%d",
+        ESP_LOGD (TAG, "Reading INFOTAINMENT, previous_asleep_state_=%d, car_just_woken_=%d, car_is_charging_=%d, Unlocked=%d, User=%d",
                   previous_asleep_state_, car_just_woken_, car_is_charging_, this->isUnlockedSensor->state, this->isUserPresentSensor->state);
         
         //if (car_just_woken_ or OneOffUpdate or car_is_charging_ or this->isUnlockedSensor->state or this->isUserPresentSensor->state)
@@ -917,14 +921,21 @@ namespace esphome
           }
         }
         else if (car_just_woken_ != 0)
-        { // Just woken polls lowest priority
+        { // Just woken polls lower priority
           if (car_just_woken_ == 1)
           { // Do a poll as soon as the car awakes
             do_poll_ = true;
             car_just_woken_ = 2;
           }
-          else if (((millis() - last_infotainment_poll_time_) > poll_data_period_))
+          else if ((millis() - last_infotainment_poll_time_) > poll_data_period_)
           { // subsequent polls on the configured repeat period
+            do_poll_ = true;
+          }
+        }
+        else if (poll_asleep_period_ != 0)
+        { // Try slower polls even when car is asleep unless set to 0
+          if ((millis() - last_infotainment_poll_time_) > poll_asleep_period_)
+          {
             do_poll_ = true;
           }
         }
@@ -1098,11 +1109,13 @@ namespace esphome
       tesla_ble_client_->setVIN(vin);
     }
 
-    void TeslaBLEVehicle::load_polling_parameters (const int post_wake_poll_time, const int poll_data_period, const int poll_charging_period)
+    void TeslaBLEVehicle::load_polling_parameters (const int post_wake_poll_time, const int poll_data_period,
+                                                   const int poll_asleep_period, const int poll_charging_period)
     {
       // All timings are in milliseconds
       post_wake_poll_time_ = post_wake_poll_time * 1000;
       poll_data_period_ = poll_data_period * 1000;
+      poll_asleep_period_ = poll_asleep_period * 1000;
       poll_charging_period_ = poll_charging_period * 1000;
     }
 
