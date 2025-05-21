@@ -137,6 +137,9 @@ namespace esphome
             int esp32_just_started_ = 0;
             int car_is_charging_ = 0;
             bool do_poll_ = false;
+            bool ble_disconnected_ = true;
+            int Ble_disconnected_time_;
+            int ble_disconnected_min_time_;
             TeslaBLEVehicle();
             void setup() override;
             void loop() override;
@@ -145,7 +148,9 @@ namespace esphome
                                      esp_ble_gattc_cb_param_t *param) override;
             void dump_config() override;
             void set_vin(const char *vin);
-            void load_polling_parameters (const int post_wake_poll_time, const int poll_data_period, const int poll_asleep_period, const int poll_charging_period);
+            void load_polling_parameters (const int post_wake_poll_time, const int poll_data_period,
+                                          const int poll_asleep_period, const int poll_charging_period,
+                                          const int ble_disconnected_min_time);
             void process_command_queue();
             void process_response_queue();
             void process_ble_read_queue();
