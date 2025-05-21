@@ -39,6 +39,7 @@ namespace esphome
       this->service_uuid_ = espbt::ESPBTUUID::from_raw(SERVICE_UUID);
       this->read_uuid_ = espbt::ESPBTUUID::from_raw(READ_UUID);
       this->write_uuid_ = espbt::ESPBTUUID::from_raw(WRITE_UUID);
+      Ble_disconnected_time_ = millis(); // Initialise disconnect time on startup
 
       this->initializeFlash();
       this->openNVSHandle();
@@ -900,7 +901,7 @@ namespace esphome
         }
         previous_asleep_state_ = this->isAsleepSensor->state;
 
-        ESP_LOGD (TAG, "Reading INFOTAINMENT, previous_asleep_state_=%d, car_just_woken_=%d, car_is_charging_=%d, Unlocked=%d, User=%d",
+        ESP_LOGI (TAG, "Reading INFOTAINMENT, previous_asleep_state_=%d, car_just_woken_=%d, car_is_charging_=%d, Unlocked=%d, User=%d",
                   previous_asleep_state_, car_just_woken_, car_is_charging_, this->isUnlockedSensor->state, this->isUserPresentSensor->state);
         
         //if (car_just_woken_ or OneOffUpdate or car_is_charging_ or this->isUnlockedSensor->state or this->isUserPresentSensor->state)
@@ -951,6 +952,15 @@ namespace esphome
           }
           one_off_update_ = false; // Clear once a single cycle of data collection completed
           do_poll_ = false;
+        }
+        if (ble_disconnected_min_time_ != 0)
+        { // Only delay setting to Unkown if not zeero
+          if (ble_disconnected_ and ((millis() - Ble_disconnected_time_) > ble_disconnected_min_time_))
+          { // Only make sensors Unknown if ble disconnected continuously for the configured time
+            this->setSensors(false);
+            this->setInfotainmentSensors (false);
+            this->setChargeFlapHasState(false);
+          }
         }
         return;
       }
@@ -1110,13 +1120,15 @@ namespace esphome
     }
 
     void TeslaBLEVehicle::load_polling_parameters (const int post_wake_poll_time, const int poll_data_period,
-                                                   const int poll_asleep_period, const int poll_charging_period)
+                                                   const int poll_asleep_period, const int poll_charging_period,
+                                                   const int ble_disconnected_min_time)
     {
       // All timings are in milliseconds
       post_wake_poll_time_ = post_wake_poll_time * 1000;
       poll_data_period_ = poll_data_period * 1000;
       poll_asleep_period_ = poll_asleep_period * 1000;
       poll_charging_period_ = poll_charging_period * 1000;
+      ble_disconnected_min_time_ = ble_disconnected_min_time * 1000;
     }
 
     void TeslaBLEVehicle::regenerateKey()
@@ -1683,6 +1695,7 @@ namespace esphome
           ESP_LOGI(TAG, "Connected successfully!");
           this->status_clear_warning();
           this->setSensors(true);
+          ble_disconnected_ = false;
 
           // generate random connection id 16 bytes
           pb_byte_t connection_id[16];
@@ -1710,11 +1723,15 @@ namespace esphome
         this->node_state = espbt::ClientState::IDLE;
 
         // set binary sensors to unknown
-        this->setSensors(false);
-        this->setInfotainmentSensors (false);
-        this->setChargeFlapHasState(false);
+        if (ble_disconnected_min_time_ == 0)
+        { // If delay time zero, then set Unknown on any disconnect however fleeting
+            this->setSensors(false);
+            this->setInfotainmentSensors (false);
+            this->setChargeFlapHasState(false);
+        }
+        ble_disconnected_ = true;
+        Ble_disconnected_time_ = millis();
 
-        // TODO: charging switch off
         this->status_set_warning("BLE connection closed");
         break;
       }
