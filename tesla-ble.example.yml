@@ -24,10 +24,10 @@ external_components:
   source: github://PedroKTFC/esphome-tesla-ble
 
 packages:
-  base:  github://PedroKTFC/esphome-tesla-ble/packages/base.yml@dev
-  device_base: github://PedroKTFC/esphome-tesla-ble/boards/esp32-generic.yml@dev
-  client: github://PedroKTFC/esphome-tesla-ble/packages/client.yml@dev
-  # listener: github://PedroKTFC/esphome-tesla-ble/packages/listener.yml@dev # Uncomment this to scan find your VIN BLE MAC address
+  base:  github://PedroKTFC/esphome-tesla-ble/packages/base.yml
+  device_base: github://PedroKTFC/esphome-tesla-ble/boards/esp32-generic.yml
+  client: github://PedroKTFC/esphome-tesla-ble/packages/client.yml
+  # listener: github://PedroKTFC/esphome-tesla-ble/packages/listener.yml # Uncomment this to scan find your VIN BLE MAC address
 
 dashboard_import:
   package_import_url: github://PedroKTFC/esphome-tesla-ble/tesla-ble-esp32-generic.dashboard.yml
