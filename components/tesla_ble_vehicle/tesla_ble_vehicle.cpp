@@ -39,7 +39,7 @@ namespace esphome
       this->service_uuid_ = espbt::ESPBTUUID::from_raw(SERVICE_UUID);
       this->read_uuid_ = espbt::ESPBTUUID::from_raw(READ_UUID);
       this->write_uuid_ = espbt::ESPBTUUID::from_raw(WRITE_UUID);
-      Ble_disconnected_time_ = millis(); // Initialise disconnect time on startup
+      ble_disconnected_time_ = millis(); // Initialise disconnect time on startup
 
       this->initializeFlash();
       this->openNVSHandle();
@@ -953,15 +953,6 @@ namespace esphome
           one_off_update_ = false; // Clear once a single cycle of data collection completed
           do_poll_ = false;
         }
-        if (ble_disconnected_min_time_ != 0)
-        { // Only delay setting to Unkown if not zeero
-          if (ble_disconnected_ and ((millis() - Ble_disconnected_time_) > ble_disconnected_min_time_))
-          { // Only make sensors Unknown if ble disconnected continuously for the configured time
-            this->setSensors(false);
-            this->setInfotainmentSensors (false);
-            this->setChargeFlapHasState(false);
-          }
-        }
         return;
       }
     }
@@ -1681,6 +1672,17 @@ namespace esphome
                                               esp_ble_gattc_cb_param_t *param)
     {
       ESP_LOGV(TAG, "GATTC event %d", event);
+      if (ble_disconnected_min_time_ != 0)
+      { // Only delay setting to Unkown if not zeero
+        if ((ble_disconnected_ == 1) and ((millis() - ble_disconnected_time_) > ble_disconnected_min_time_))
+        { // Only make sensors Unknown if ble disconnected continuously for the configured time
+          this->setSensors(false);
+          this->setInfotainmentSensors (false);
+          this->setChargeFlapHasState(false);
+          ble_disconnected_ = 2;
+        }
+      }
+
       switch (event)
       {
       case ESP_GATTC_CONNECT_EVT:
@@ -1695,7 +1697,7 @@ namespace esphome
           ESP_LOGI(TAG, "Connected successfully!");
           this->status_clear_warning();
           this->setSensors(true);
-          ble_disconnected_ = false;
+          ble_disconnected_ = 0;
 
           // generate random connection id 16 bytes
           pb_byte_t connection_id[16];
@@ -1729,8 +1731,8 @@ namespace esphome
             this->setInfotainmentSensors (false);
             this->setChargeFlapHasState(false);
         }
-        ble_disconnected_ = true;
-        Ble_disconnected_time_ = millis();
+        ble_disconnected_ = 1;
+        ble_disconnected_time_ = millis();
 
         this->status_set_warning("BLE connection closed");
         break;
