@@ -137,8 +137,8 @@ namespace esphome
             int esp32_just_started_ = 0;
             int car_is_charging_ = 0;
             bool do_poll_ = false;
-            bool ble_disconnected_ = true;
-            int Ble_disconnected_time_;
+            int ble_disconnected_ = 1; // 0 = connected, 1 = disconnected, 2 = disconnected and Unknowns have been set
+            int ble_disconnected_time_;
             int ble_disconnected_min_time_;
             TeslaBLEVehicle();
             void setup() override;
