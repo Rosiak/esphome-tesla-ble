@@ -3,7 +3,7 @@ import esphome.config_validation as cv
 from esphome.components import ble_client, binary_sensor, text_sensor, sensor
 from esphome.const import CONF_ID
 
-CODEOWNERS = ["@yoziru"]
+CODEOWNERS = ["@PedroKTFC"]
 DEPENDENCIES = ["ble_client"]
 
 tesla_ble_vehicle_ns = cg.esphome_ns.namespace("tesla_ble_vehicle")
@@ -22,6 +22,14 @@ CONF_CHARGE_STATE = "charge_state"
 CONF_ODOMETER = "odometer"
 CONF_CHARGE_CURRENT = "charge_current"
 CONF_MAX_SOC = "max_soc"
+CONF_BATTERY_RANGE = "battery_range"
+CONF_CHARGING_STATE = "charging_state"
+CONF_LAST_UPDATE = "last_update"
+CONF_POST_WAKE_POLL_TIME = "post_wake_poll_time" # How long to poll for data after car awakes (s)
+CONF_POLL_DATA_PERIOD = "poll_data_period" # Normal period when polling for data when not asleep (s)
+CONF_POLL_ASLEEP_PERIOD = "poll_asleep_period" # Period to poll for data when asleep (s)
+CONF_POLL_CHARGING_PERIOD = "poll_charging_period" # Period to poll for data when charging (s)
+CONF_BLE_DISCONNECTED_MIN_TIME= "ble_disconnected_min_time" # Minimum time BLE must be disconnected before sensors are Unknwon (s)
 
 CONFIG_SCHEMA = (
     cv.Schema(
@@ -29,6 +37,11 @@ CONFIG_SCHEMA = (
             cv.GenerateID(CONF_ID): cv.declare_id(TeslaBLEVehicle),
             # add support to set VIN (required)
             cv.Required(CONF_VIN): cv.string,
+            cv.Optional(CONF_POST_WAKE_POLL_TIME): cv.uint16_t,
+            cv.Optional(CONF_POLL_DATA_PERIOD): cv.uint16_t,
+            cv.Optional(CONF_POLL_ASLEEP_PERIOD): cv.uint16_t,
+            cv.Optional(CONF_POLL_CHARGING_PERIOD): cv.uint16_t,
+            cv.Optional(CONF_BLE_DISCONNECTED_MIN_TIME): cv.uint16_t,
             cv.Optional(CONF_IS_ASLEEP): binary_sensor.binary_sensor_schema(
                 icon="mdi:sleep"
             ).extend(),
@@ -60,6 +73,16 @@ CONFIG_SCHEMA = (
                 icon="mdi:battery-lock", device_class=sensor.DEVICE_CLASS_ENERGY_STORAGE,
                 unit_of_measurement="%"
             ).extend(),
+            cv.Optional(CONF_BATTERY_RANGE): sensor.sensor_schema(
+                icon="mdi:gauge", device_class=sensor.DEVICE_CLASS_DISTANCE,
+                accuracy_decimals=2, unit_of_measurement="miles"
+            ).extend(),
+            cv.Optional(CONF_CHARGING_STATE): text_sensor.text_sensor_schema(
+                icon="mdi:ev-station"
+            ).extend(),
+            cv.Optional(CONF_LAST_UPDATE): text_sensor.text_sensor_schema(
+                icon="mdi:update"
+            ).extend(),
         }
     )
     .extend(cv.polling_component_schema("1min"))
@@ -74,6 +97,8 @@ async def to_code(config):
     await ble_client.register_ble_node(var, config)
 
     cg.add(var.set_vin(config[CONF_VIN]))
+    cg.add(var.load_polling_parameters(config[CONF_POST_WAKE_POLL_TIME], config[CONF_POLL_DATA_PERIOD],
+           config[CONF_POLL_ASLEEP_PERIOD], config[CONF_POLL_CHARGING_PERIOD], config[CONF_BLE_DISCONNECTED_MIN_TIME]))
 
     if CONF_IS_ASLEEP in config:
         conf = config[CONF_IS_ASLEEP]
@@ -119,3 +144,18 @@ async def to_code(config):
         conf = config[CONF_MAX_SOC]
         ss = await sensor.new_sensor(conf)
         cg.add(var.set_sensor_max_soc_state(ss))
+
+    if CONF_BATTERY_RANGE in config:
+        conf = config[CONF_BATTERY_RANGE]
+        ss = await sensor.new_sensor(conf)
+        cg.add(var.set_sensor_battery_range_state(ss))
+
+    if CONF_CHARGING_STATE in config:
+        conf = config[CONF_CHARGING_STATE]
+        ts = await text_sensor.new_text_sensor(conf)
+        cg.add(var.set_text_sensor_charging_state(ts))
+
+    if CONF_LAST_UPDATE in config:
+        conf = config[CONF_LAST_UPDATE]
+        ts = await text_sensor.new_text_sensor(conf)
+        cg.add(var.set_text_sensor_last_update_state(ts))

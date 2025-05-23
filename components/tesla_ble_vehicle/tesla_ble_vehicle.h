@@ -125,6 +125,21 @@ namespace esphome
                                 public ble_client::BLEClientNode
         {
         public:
+            int post_wake_poll_time_;
+            int poll_data_period_;
+            int poll_asleep_period_;
+            int poll_charging_period_;
+            int car_just_woken_ = 0;
+            bool previous_asleep_state_ = false;
+            bool one_off_update_ = false;
+            int car_wake_time_;
+            int last_infotainment_poll_time_;
+            int esp32_just_started_ = 0;
+            int car_is_charging_ = 0;
+            bool do_poll_ = false;
+            int ble_disconnected_ = 1; // 0 = connected, 1 = disconnected, 2 = disconnected and Unknowns have been set
+            int ble_disconnected_time_;
+            int ble_disconnected_min_time_;
             TeslaBLEVehicle();
             void setup() override;
             void loop() override;
@@ -133,6 +148,9 @@ namespace esphome
                                      esp_ble_gattc_cb_param_t *param) override;
             void dump_config() override;
             void set_vin(const char *vin);
+            void load_polling_parameters (const int post_wake_poll_time, const int poll_data_period,
+                                          const int poll_asleep_period, const int poll_charging_period,
+                                          const int ble_disconnected_min_time);
             void process_command_queue();
             void process_response_queue();
             void process_ble_read_queue();
@@ -196,15 +214,22 @@ namespace esphome
                 isAsleepSensor->set_has_state(has_state);
                 isUnlockedSensor->set_has_state(has_state);
                 isUserPresentSensor->set_has_state(has_state);
+            }
+
+            void setInfotainmentSensors (bool state)
+            {
                 // Non-binary sensors cater naturally for unknown
-                if (!has_state)
+                if (!state)
                 {
                     ChargeStateSensor->publish_state (NAN);
                     OdometerStateSensor->publish_state (NAN);
                     ChargeCurrentStateSensor->publish_state (NAN);
                     MaxSocStateSensor->publish_state (NAN);
                     ShiftStateSensor->publish_state ("Unknown");
+                    ChargingStateSensor->publish_state ("Unknown");
+                    BatteryRangeStateSensor->publish_state (NAN);
                 }
+
             }
             void setCarBatteryLevel (int battery_level)
             {
@@ -226,14 +251,39 @@ namespace esphome
                 MaxSocStateSensor->publish_state (max);
             }
 
+            void setBatteryRange (float range)
+            {
+                BatteryRangeStateSensor->publish_state (range);
+            }
+
             void setCarShiftState (std::string shift_state)
             {
                 ShiftStateSensor->publish_state (shift_state);
             }
 
+            void setChargingState (std::string charging_state)
+            {
+                ChargingStateSensor->publish_state (charging_state);
+            }
+
+            void setLastUpdateState (std::string last_update)
+            {
+                LastUpdateStateSensor->publish_state (last_update);
+            }
+
             void set_text_sensor_shift_state (text_sensor::TextSensor *s)
             {
                 ShiftStateSensor = static_cast<text_sensor::TextSensor *>(s);
+            }
+
+            void set_text_sensor_charging_state (text_sensor::TextSensor *s)
+            {
+                ChargingStateSensor = static_cast<text_sensor::TextSensor *>(s);
+            }
+
+            void set_text_sensor_last_update_state (text_sensor::TextSensor *s)
+            {
+                LastUpdateStateSensor = static_cast<text_sensor::TextSensor *>(s);
             }
 
             void set_sensor_charge_state (sensor::Sensor *s)
@@ -251,6 +301,11 @@ namespace esphome
                 MaxSocStateSensor = static_cast<sensor::Sensor *>(s);
             }
 
+            void set_sensor_battery_range_state (sensor::Sensor *s)
+            {
+                BatteryRangeStateSensor = static_cast<sensor::Sensor *>(s);
+            }
+
             void set_sensor_odometer_state (sensor::Sensor *s)
             {
                 OdometerStateSensor = static_cast<sensor::Sensor *>(s);
@@ -260,14 +315,30 @@ namespace esphome
             {
                 switch (shift_state)
                 {
-                    case CarServer_ShiftState_Invalid_tag: return ("Invalid");
-                    case CarServer_ShiftState_P_tag: return ("P");
-                    case CarServer_ShiftState_R_tag: return ("R");
-                    case CarServer_ShiftState_N_tag: return ("N");
-                    case CarServer_ShiftState_D_tag: return ("D");
-                    case CarServer_ShiftState_SNA_tag: return ("SNA");
+                    case CarServer_ShiftState_Invalid_tag:  return ("Invalid");
+                    case CarServer_ShiftState_P_tag:        return ("P");
+                    case CarServer_ShiftState_R_tag:        return ("R");
+                    case CarServer_ShiftState_N_tag:        return ("N");
+                    case CarServer_ShiftState_D_tag:        return ("D");
+                    case CarServer_ShiftState_SNA_tag:      return ("SNA");
                 }
                 return ("Shift state look up error");
+            }
+
+            std::string lookup_charging_state (int charging_state)
+            {
+                switch (charging_state)
+                {
+                    case CarServer_ChargeState_ChargingState_Unknown_tag:       return ("Unknown");
+                    case CarServer_ChargeState_ChargingState_Disconnected_tag:  return ("Disconnected");
+                    case CarServer_ChargeState_ChargingState_NoPower_tag:       return ("No Power");
+                    case CarServer_ChargeState_ChargingState_Starting_tag:      return ("Starting");
+                    case CarServer_ChargeState_ChargingState_Charging_tag:      return ("Charging");
+                    case CarServer_ChargeState_ChargingState_Complete_tag:      return ("Complete");
+                    case CarServer_ChargeState_ChargingState_Stopped_tag:       return ("Stopped");
+                    case CarServer_ChargeState_ChargingState_Calibrating_tag:   return ("Calibrating");
+                }
+                return ("Charging state look up error");
             }
 
         protected:
@@ -292,10 +363,13 @@ namespace esphome
             binary_sensor::CustomBinarySensor *isUserPresentSensor;
             binary_sensor::CustomBinarySensor *isChargeFlapOpenSensor;
             text_sensor::TextSensor *ShiftStateSensor;
+            text_sensor::TextSensor *ChargingStateSensor;
+            text_sensor::TextSensor *LastUpdateStateSensor;
             sensor::Sensor *ChargeStateSensor;
             sensor::Sensor *OdometerStateSensor;
             sensor::Sensor *ChargeCurrentStateSensor;
             sensor::Sensor *MaxSocStateSensor;
+            sensor::Sensor *BatteryRangeStateSensor;
 
             std::vector<unsigned char> ble_read_buffer_;
 

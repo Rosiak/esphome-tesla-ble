@@ -1,7 +1,7 @@
 # ESPHome Tesla BLE
 
-This project lets you use an ESP32 device to manage charging a Tesla vehicle over BLE, using the [yoziru/tesla-ble](http://github.com/yoziru/tesla-ble) library.
-Tested with M5Stack NanoC6 and Tesla firmwares 2024.26.3.1.
+This project lets you use an ESP32 device to manage charging a Tesla vehicle over BLE. It is a fork of the [yoziru/esphome-tesla-ble](http://github.com/yoziru/esphome-tesla-ble) and the [yoziru/tesla-ble](http://github.com/yoziru/tesla-ble) library.
+Tested with M5Stack NanoC6 and Tesla firmwares 2025.14.1.
 
 | Controls | Sensors | Diagnostic |
 | - | - | - |
@@ -9,22 +9,41 @@ Tested with M5Stack NanoC6 and Tesla firmwares 2024.26.3.1.
 
 
 ## Features
-- [x] Pair BLE key with vehicle
-- [x] Wake up vehicle
-  - [ ] Use [Charging Manager](https://github.com/teslamotors/vehicle-command/blob/main/pkg/protocol/protocol.md#roles) role (wake command [not yet supported](https://github.com/teslamotors/vehicle-command/issues/232#issuecomment-2181503570) as of 2024.26.3.1)
-- [x] Set charging amps
-- [x] Set charging limit (percent)
-- [x] Turn on/off charging
-- [x] BLE information sensors
-  - [x] Asleep / awake
-  - [x] Doors locked / unlocked
-  - [x] User present / not present
-  - [x] Charging flap open / closed (only when vehicle is awake)
-  - [x] BLE signal strength
+- Pair BLE key with vehicle
+- Wake up vehicle
+   Use [Charging Manager](https://github.com/teslamotors/vehicle-command/blob/main/pkg/protocol/protocol.md#roles) role (wake command [not yet supported](https://github.com/teslamotors/vehicle-command/issues/232#issuecomment-2181503570) as of 2024.26.3.1)
+- Set charging amps
+- Set charging limit (percent)
+- Turn on/off charging
+- Vehicle information sensors. There are two categories, those available even when asleep and those only when awake. Always available:
+  - Asleep / awake
+  - Doors locked / unlocked
+  - User present / not present
+- Only when awake:
+  - Charge current (Amps)
+  - Charging flap open / closed
+  - Charge level (%)
+  - Charge limit (%)
+  - Charging state (eg Stopped, Charging)
+  - Last update (the last time a response was received from the Infotainment system, dows not go "Unknown")
+  - Odometer (miles, see below for km)
+  - Range (miles, see below for km)
+  - Shift state (eg Invalid, R, N, D)
 
 ## Usage
 
-> For ESPHome dashboard, see [`tesla-ble-example.yml`](./tesla-ble.example.yml)
+For an example ESPHome dashboard, see [`tesla-ble-example.yml`](./tesla-ble.example.yml). This includes an example of how to use km instead of miles. There are several key parameters that determine the polling activity as follows:
+
+- **update_interval**: This is the base polling rate. No other polls can happen faster than this. The VCSEC system is polled at this rate and does not wake the car. [Default TBC]
+- **post_wake_poll_time**: If the vehicle wakes up, it will be detected and the vehicle polled for data for at least this time [Default 300s]
+- **poll_data_period**: The vehicle is polled every this paramter seconds when awake. Note the vehicle can fall asleep if this is too long [Default 60s]
+- **poll_asleep_period**: It is possible that the vehicle starts, stops and restarts charging while always awake. In this case it is likely that the restart is not detected. Therefore the vehicle is ALWAYS polled at this rate even when asleep. If set to short it can prevent the vehicle falling asleep. [Default 60s]
+- **poll_charging_period**: while charging, the car can be polled more frequently if desired using this parameter [Default 10s]
+- **ble_disconnected_min_time**: sensors will only be set to *Unknown* if the BLE connection is disconnected continuously for at least this time (useful if you have a slightly flakey BLE connection to your vehicle). Setting it to zero means sensors will be set to *Unknown* as soon as the BLE connection disconnects. [Default 300s]
+
+If the vehicle is unlocked or a person is detected as present in the vehicle, the vehicle will be polled at *update_interval* until it is locked and/or no person is present in the vehicle. This could be useful if you wish to quickly detect a change in the vehicle (for example, I use it to detect when it is put into gear so I can trigger an automation to open my electric gate).
+
+Note that if the other parameters are not multiples of *update_interval*, the timings will be longer than expected. For example, if *update_interval* is set to 30s and *poll_data_period* is set to 75s, then the effective *poll_data_period* will be 90s.
 
 ### Pre-requisites
 - Python 3.10+
