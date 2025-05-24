@@ -862,6 +862,20 @@ namespace esphome
     void TeslaBLEVehicle::update()
     {
       ESP_LOGD(TAG, "Updating Tesla BLE Vehicle component, command queue size is %d ..", command_queue_.size());
+      /*
+      *   When the car departs, the node_state is no longer established so the main loop isn't entered and any timeouts in there
+      *   are no longer available. Therefore have to handle disconnections outside of the main loop.
+      */
+      if (ble_disconnected_min_time_ != 0)
+      { // Only delay setting to Unkown if not zero
+        if ((ble_disconnected_ == 1) and ((millis() - ble_disconnected_time_) > ble_disconnected_min_time_))
+        { // Only make sensors Unknown if ble disconnected continuously for the configured time
+          this->setSensors(false);
+          this->setInfotainmentSensors (false);
+          this->setChargeFlapHasState(false);
+          ble_disconnected_ = 2;
+        }
+      }
       if (this->node_state == espbt::ClientState::ESTABLISHED)
       {
         ESP_LOGD(TAG, "Querying vehicle status update..");
@@ -1672,16 +1686,6 @@ namespace esphome
                                               esp_ble_gattc_cb_param_t *param)
     {
       ESP_LOGV(TAG, "GATTC event %d", event);
-      if (ble_disconnected_min_time_ != 0)
-      { // Only delay setting to Unkown if not zeero
-        if ((ble_disconnected_ == 1) and ((millis() - ble_disconnected_time_) > ble_disconnected_min_time_))
-        { // Only make sensors Unknown if ble disconnected continuously for the configured time
-          this->setSensors(false);
-          this->setInfotainmentSensors (false);
-          this->setChargeFlapHasState(false);
-          ble_disconnected_ = 2;
-        }
-      }
 
       switch (event)
       {
