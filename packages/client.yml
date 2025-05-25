@@ -86,8 +86,9 @@ sensor:
 
 switch:
   - platform: template
-    name: "Charger switch"
+    name: "Charger"
     optimistic: true
+    icon: mdi:lightning-bolt
     assumed_state: true # we can't read the state of the charger over
     restore_mode: RESTORE_DEFAULT_OFF
     turn_on_action:
@@ -95,6 +96,50 @@ switch:
     turn_off_action:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_CHARGING_SWITCH, 0);
 
+  - platform: template
+    name: "Sentry mode"
+    optimistic: true
+    icon: mdi:record-circle-outline
+    assumed_state: true # we can't read the state 
+    restore_mode: RESTORE_DEFAULT_OFF
+    turn_on_action:
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_SENTRY_SWITCH, 1);
+    turn_off_action:
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_SENTRY_SWITCH, 0);
+  
+  - platform: template
+    name: "Climate"
+    optimistic: true
+    icon: mdi:fan
+    assumed_state: true # we can't read the state 
+    restore_mode: RESTORE_DEFAULT_OFF
+    turn_on_action:
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_HVAC_SWITCH, 1);
+    turn_off_action:
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_HVAC_SWITCH, 0);
+
+  - platform: template
+    name: "Steering wheel heat"
+    optimistic: true
+    icon: mdi:steering
+    assumed_state: true # we can't read the state 
+    restore_mode: RESTORE_DEFAULT_OFF
+    turn_on_action:
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_HVAC_STEERING_HEATER_SWITCH, 1);
+    turn_off_action:
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_HVAC_STEERING_HEATER_SWITCH, 0);
+  
+  - platform: template
+    name: "Charge port"
+    optimistic: true
+    icon: mdi:ev-plug-ccs2
+    assumed_state: true # we can't read the state 
+    restore_mode: RESTORE_DEFAULT_OFF
+    turn_on_action:
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_OPEN_CHARGE_PORT_DOOR,1);
+    turn_off_action:
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_CLOSE_CHARGE_PORT_DOOR,1);
+    
   - platform: ble_client
     ble_client_id: ble_tesla_id
     name: "BLE Connection"
