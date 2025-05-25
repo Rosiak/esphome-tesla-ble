@@ -1371,6 +1371,21 @@ namespace esphome
       case SET_CHARGING_SWITCH:
         action_str = "setChargingSwitch";
         break;
+      case SET_SENTRY_SWITCH:
+        action_str = "setSentrySwitch";
+        break;
+      case SET_HVAC_SWITCH:
+        action_str = "setHVACSwitch";
+        break;
+      case SET_HVAC_STEERING_HEATER_SWITCH:
+        action_str = "setHVACSteeringHeatSwitch";
+        break;
+      case SET_OPEN_CHARGE_PORT_DOOR:
+        action_str = "setOpenChargePortDoor";
+        break;
+      case SET_CLOSE_CHARGE_PORT_DOOR:
+        action_str = "setCloseChargePortDoor";
+        break;
       case SET_CHARGING_AMPS:
         action_str = "setChargingAmps";
         break;
@@ -1400,33 +1415,53 @@ namespace esphome
               message_buffer, &message_length, CarServer_GetVehicleData_getClimateState_tag);
           break;
         case GET_DRIVE_STATE:
-            return_code = tesla_ble_client_->buildCarServerGetVehicleDataMessage (
+          return_code = tesla_ble_client_->buildCarServerGetVehicleDataMessage (
               message_buffer, &message_length, CarServer_GetVehicleData_getDriveState_tag);
           break;
         case GET_LOCATION_STATE:
-            return_code = tesla_ble_client_->buildCarServerGetVehicleDataMessage (
+          return_code = tesla_ble_client_->buildCarServerGetVehicleDataMessage (
               message_buffer, &message_length, CarServer_GetVehicleData_getLocationState_tag);
           break;
         case GET_CLOSURE_STATE:
-            return_code = tesla_ble_client_->buildCarServerGetVehicleDataMessage (
+          return_code = tesla_ble_client_->buildCarServerGetVehicleDataMessage (
               message_buffer, &message_length, CarServer_GetVehicleData_getClosuresState_tag);
           break;
         case SET_CHARGING_SWITCH:
-          return_code = tesla_ble_client_->buildChargingSwitchMessage(
-              static_cast<bool>(param), message_buffer, &message_length);
+          return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
+              static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_chargingStartStopAction_tag);
           // If charging has been requested, enable continuous polling
           if (param == 1)
           {
             car_is_charging_ = true;
           }
           break;
+        case SET_SENTRY_SWITCH:
+          return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
+              static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_vehicleControlSetSentryModeAction_tag);
+          break;
+        case SET_HVAC_SWITCH:
+          return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
+              static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_hvacAutoAction_tag);
+          break;
+        case SET_HVAC_STEERING_HEATER_SWITCH:
+          return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
+              static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_hvacSteeringWheelHeaterAction_tag);
+          break;
+        case SET_OPEN_CHARGE_PORT_DOOR:
+          return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
+              static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_chargePortDoorOpen_tag);
+          break;
+         case SET_CLOSE_CHARGE_PORT_DOOR:
+          return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
+              static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_chargePortDoorClose_tag);
+          break;
         case SET_CHARGING_AMPS:
-          return_code = tesla_ble_client_->buildChargingAmpsMessage(
-              static_cast<int32_t>(param), message_buffer, &message_length);
+          return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
+            static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_setChargingAmpsAction_tag);
           break;
         case SET_CHARGING_LIMIT:
-          return_code = tesla_ble_client_->buildChargingSetLimitMessage(
-              static_cast<int32_t>(param), message_buffer, &message_length);
+          return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
+            static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_chargingSetLimitAction_tag);
           break;
         default:
           ESP_LOGE(TAG, "Invalid action: %d", static_cast<int>(action));
