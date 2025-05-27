@@ -16,9 +16,9 @@ esphome:
   comment: ${device_description}
   project:
     name: PedroKTFC.esphome-tesla-ble
-    version: "2025.0.1"
-  libraries:
-    - https://github.com/PedroKTFC/tesla-ble.git
+    version: "2025.0.2"
+#  libraries:
+#    - https://github.com/PedroKTFC/tesla-ble.git
 logger:
   level: INFO
 
