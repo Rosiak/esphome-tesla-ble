@@ -9,12 +9,15 @@ Tested with M5Stack NanoC6 and Tesla firmwares 2025.14.1.
 
 
 ## Features
-- Pair BLE key with vehicle
-- Wake up vehicle
-   Use [Charging Manager](https://github.com/teslamotors/vehicle-command/blob/main/pkg/protocol/protocol.md#roles) role (wake command [not yet supported](https://github.com/teslamotors/vehicle-command/issues/232#issuecomment-2181503570) as of 2024.26.3.1)
-- Set charging amps
-- Set charging limit (percent)
-- Turn on/off charging
+- Controls
+   - Open/close charge port flap
+   - Set charging amps
+   - Set charging limit (%)
+   - Turn on/off charger
+   - Turn on/off climate
+   - Turn on/off sentry mode
+   - Turn on/off steering wheel heater
+   - Wake up vehicle
 - Vehicle information sensors. There are two categories, those available even when asleep and those only when awake. Always available:
   - Asleep / awake
   - Doors locked / unlocked
@@ -29,12 +32,16 @@ Tested with M5Stack NanoC6 and Tesla firmwares 2025.14.1.
   - Odometer (miles, see below for km)
   - Range (miles, see below for km)
   - Shift state (eg Invalid, R, N, D)
+- Diagnostics (button actions)
+   - Force data update (wakes the car and reads all sensors)
+   - Pair BLE key with vehicle
+   - Restart ESP board
 
 ## Usage
 
 For an example ESPHome dashboard, see [`tesla-ble-example.yml`](./tesla-ble.example.yml). This includes an example of how to use km instead of miles. There are several key parameters that determine the polling activity as follows:
 
-- **update_interval**: This is the base polling rate. No other polls can happen faster than this. The VCSEC system is polled at this rate and does not wake the car. [Default TBC]
+- **update_interval**: This is the base polling rate. **No other polls can happen faster than this even if you configure them shorter.** The VCSEC system is polled at this rate and does not wake the car. [Default 10s]
 - **post_wake_poll_time**: If the vehicle wakes up, it will be detected and the vehicle polled for data for at least this time [Default 300s]
 - **poll_data_period**: The vehicle is polled every this paramter seconds when awake. Note the vehicle can fall asleep if this is too long [Default 60s]
 - **poll_asleep_period**: It is possible that the vehicle starts, stops and restarts charging while always awake. In this case it is likely that the restart is not detected. Therefore the vehicle is ALWAYS polled at this rate even when asleep. If set to short it can prevent the vehicle falling asleep. [Default 60s]
