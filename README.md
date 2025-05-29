@@ -43,8 +43,8 @@ For an example ESPHome dashboard, see [`tesla-ble-example.yml`](./tesla-ble.exam
 
 - **update_interval**: This is the base polling rate. **No other polls can happen faster than this even if you configure them shorter.** The VCSEC system is polled at this rate and does not wake the car. [Default 10s]
 - **post_wake_poll_time**: If the vehicle wakes up, it will be detected and the vehicle polled for data for at least this time [Default 300s]
-- **poll_data_period**: The vehicle is polled every this paramter seconds when awake. Note the vehicle can fall asleep if this is too long [Default 60s]
-- **poll_asleep_period**: It is possible that the vehicle starts, stops and restarts charging while always awake. In this case it is likely that the restart is not detected. Therefore the vehicle is ALWAYS polled at this rate even when asleep. If set to short it can prevent the vehicle falling asleep. [Default 60s]
+- **poll_data_period**: The vehicle is polled every this paramter seconds when awake. Note the vehicle can stay awake if this is set too short [Default 60s]
+- **poll_asleep_period**: It is possible that the vehicle starts, stops and restarts charging while always awake. In this case it is likely that the restart is not detected. Therefore the vehicle is ALWAYS polled at this rate even when asleep. If set too short it can prevent the vehicle falling asleep. [Default 60s]
 - **poll_charging_period**: while charging, the car can be polled more frequently if desired using this parameter [Default 10s]
 - **ble_disconnected_min_time**: sensors will only be set to *Unknown* if the BLE connection is disconnected continuously for at least this time (useful if you have a slightly flakey BLE connection to your vehicle). Setting it to zero means sensors will be set to *Unknown* as soon as the BLE connection disconnects. [Default 300s]
 
