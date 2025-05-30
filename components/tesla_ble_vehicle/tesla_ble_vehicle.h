@@ -223,16 +223,17 @@ namespace esphome
 
             void setInfotainmentSensors (bool state)
             {
-                // Non-binary sensors cater naturally for unknown
                 if (!state)
                 {
                     ChargeStateSensor->publish_state (NAN);
                     OdometerStateSensor->publish_state (NAN);
                     ChargeCurrentStateSensor->publish_state (NAN);
+                    ChargePowerStateSensor->publish_state (NAN);
                     MaxSocStateSensor->publish_state (NAN);
                     ShiftStateSensor->publish_state ("Unknown");
                     ChargingStateSensor->publish_state ("Unknown");
                     BatteryRangeStateSensor->publish_state (NAN);
+                    isClimateOnSensor->set_has_state (state);
                 }
 
             }
@@ -249,6 +250,11 @@ namespace esphome
             void setChargeCurrent (int current)
             {
                 ChargeCurrentStateSensor->publish_state (current);
+            }
+
+            void setChargePower (int power)
+            {
+                ChargePowerStateSensor->publish_state (power);
             }
 
             void setMaxSoc (int max)
@@ -276,6 +282,11 @@ namespace esphome
                 LastUpdateStateSensor->publish_state (last_update);
             }
 
+            void setClimateState (bool climate_state)
+            {
+                isClimateOnSensor->publish_state (climate_state);
+            }
+
             void set_text_sensor_shift_state (text_sensor::TextSensor *s)
             {
                 ShiftStateSensor = static_cast<text_sensor::TextSensor *>(s);
@@ -301,6 +312,11 @@ namespace esphome
                 ChargeCurrentStateSensor = static_cast<sensor::Sensor *>(s);
             }
 
+            void set_sensor_charge_power_state (sensor::Sensor *s)
+            {
+                ChargePowerStateSensor = static_cast<sensor::Sensor *>(s);
+            }
+
             void set_sensor_max_soc_state (sensor::Sensor *s)
             {
                 MaxSocStateSensor = static_cast<sensor::Sensor *>(s);
@@ -314,6 +330,11 @@ namespace esphome
             void set_sensor_odometer_state (sensor::Sensor *s)
             {
                 OdometerStateSensor = static_cast<sensor::Sensor *>(s);
+            }
+
+            void set_binary_sensor_is_climate_on (binary_sensor::BinarySensor *s)
+            {
+                isClimateOnSensor = static_cast<binary_sensor::CustomBinarySensor *>(s);
             }
 
             std::string lookup_shift_state (int shift_state)
@@ -367,12 +388,14 @@ namespace esphome
             binary_sensor::CustomBinarySensor *isUnlockedSensor;
             binary_sensor::CustomBinarySensor *isUserPresentSensor;
             binary_sensor::CustomBinarySensor *isChargeFlapOpenSensor;
+            binary_sensor::CustomBinarySensor *isClimateOnSensor;
             text_sensor::TextSensor *ShiftStateSensor;
             text_sensor::TextSensor *ChargingStateSensor;
             text_sensor::TextSensor *LastUpdateStateSensor;
             sensor::Sensor *ChargeStateSensor;
             sensor::Sensor *OdometerStateSensor;
             sensor::Sensor *ChargeCurrentStateSensor;
+            sensor::Sensor *ChargePowerStateSensor;
             sensor::Sensor *MaxSocStateSensor;
             sensor::Sensor *BatteryRangeStateSensor;
 

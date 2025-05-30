@@ -960,6 +960,7 @@ namespace esphome
           last_infotainment_poll_time_ = millis();
           sendCarServerVehicleActionMessage (GET_CHARGE_STATE, 0);
           sendCarServerVehicleActionMessage (GET_DRIVE_STATE, 0);
+          sendCarServerVehicleActionMessage (GET_CLIMATE_STATE, 0);
           if ((car_just_woken_ != 0) and ((millis() - car_wake_time_) > post_wake_poll_time_))
           {
             car_just_woken_ = 0;
@@ -1613,6 +1614,7 @@ namespace esphome
             */
             setCarBatteryLevel (carserver_response.response_msg.vehicleData.charge_state.optional_usable_battery_level.usable_battery_level);
             setChargeCurrent (carserver_response.response_msg.vehicleData.charge_state.optional_charger_actual_current.charger_actual_current);
+            setChargePower (carserver_response.response_msg.vehicleData.charge_state.optional_charger_power.charger_power);
             setMaxSoc (carserver_response.response_msg.vehicleData.charge_state.optional_charge_limit_soc.charge_limit_soc);
             setBatteryRange (carserver_response.response_msg.vehicleData.charge_state.optional_battery_range.battery_range);
             switch (carserver_response.response_msg.vehicleData.charge_state.charging_state.which_type)
@@ -1633,6 +1635,11 @@ namespace esphome
             std::string shift_state_text = lookup_shift_state (carserver_response.response_msg.vehicleData.drive_state.shift_state.which_type);
             setCarShiftState (shift_state_text.c_str());
             setCarOdometer (carserver_response.response_msg.vehicleData.drive_state.optional_odometer_in_hundredths_of_a_mile.odometer_in_hundredths_of_a_mile);
+            setLastUpdateState (ctime(&timestamp));
+          }
+          else if (carserver_response.response_msg.vehicleData.has_climate_state)
+          {
+            setClimateState (carserver_response.response_msg.vehicleData.climate_state.optional_is_climate_on.is_climate_on);
             setLastUpdateState (ctime(&timestamp));
           }
           break;
