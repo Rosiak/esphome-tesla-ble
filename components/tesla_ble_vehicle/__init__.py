@@ -21,10 +21,12 @@ CONF_SHIFT_STATE = "shift_state"
 CONF_CHARGE_STATE = "charge_state"
 CONF_ODOMETER = "odometer"
 CONF_CHARGE_CURRENT = "charge_current"
+CONF_CHARGE_POWER = "charge_power"
 CONF_MAX_SOC = "max_soc"
 CONF_BATTERY_RANGE = "battery_range"
 CONF_CHARGING_STATE = "charging_state"
 CONF_LAST_UPDATE = "last_update"
+CONF_IS_CLIMATE_ON = "is_climate_on"
 CONF_POST_WAKE_POLL_TIME = "post_wake_poll_time" # How long to poll for data after car awakes (s)
 CONF_POLL_DATA_PERIOD = "poll_data_period" # Normal period when polling for data when not asleep (s)
 CONF_POLL_ASLEEP_PERIOD = "poll_asleep_period" # Period to poll for data when asleep (s)
@@ -69,6 +71,10 @@ CONFIG_SCHEMA = (
                 icon="mdi:current-ac", device_class=sensor.DEVICE_CLASS_CURRENT,
                 unit_of_measurement="A"
             ).extend(),
+            cv.Optional(CONF_CHARGE_POWER): sensor.sensor_schema(
+                icon="mdi:lightning-bolt-circle", device_class=sensor.DEVICE_CLASS_POWER,
+                unit_of_measurement="kW"
+            ).extend(),
             cv.Optional(CONF_MAX_SOC): sensor.sensor_schema(
                 icon="mdi:battery-lock", device_class=sensor.DEVICE_CLASS_ENERGY_STORAGE,
                 unit_of_measurement="%"
@@ -82,6 +88,9 @@ CONFIG_SCHEMA = (
             ).extend(),
             cv.Optional(CONF_LAST_UPDATE): text_sensor.text_sensor_schema(
                 icon="mdi:update"
+            ).extend(),
+            cv.Optional(CONF_IS_CLIMATE_ON): binary_sensor.binary_sensor_schema(
+                icon="mdi:fan"
             ).extend(),
         }
     )
@@ -140,6 +149,11 @@ async def to_code(config):
         ss = await sensor.new_sensor(conf)
         cg.add(var.set_sensor_charge_current_state(ss))
 
+    if CONF_CHARGE_POWER in config:
+        conf = config[CONF_CHARGE_POWER]
+        ss = await sensor.new_sensor(conf)
+        cg.add(var.set_sensor_charge_power_state(ss))
+
     if CONF_MAX_SOC in config:
         conf = config[CONF_MAX_SOC]
         ss = await sensor.new_sensor(conf)
@@ -159,3 +173,8 @@ async def to_code(config):
         conf = config[CONF_LAST_UPDATE]
         ts = await text_sensor.new_text_sensor(conf)
         cg.add(var.set_text_sensor_last_update_state(ts))
+
+    if CONF_IS_CLIMATE_ON in config:
+        conf = config[CONF_IS_CLIMATE_ON]
+        bs = await binary_sensor.new_binary_sensor(conf)
+        cg.add(var.set_binary_sensor_is_climate_on(bs))
