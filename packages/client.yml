@@ -36,6 +36,8 @@ tesla_ble_vehicle:
       - multiply: 0.01 # Odometer is in hundredths of a mile (can use this to convert to km)
   charge_current:
     name: "Charge current"
+  charge_power:
+    name: "Charge power"
   max_soc:
     name: "Charge limit"
   battery_range:
@@ -44,6 +46,8 @@ tesla_ble_vehicle:
     name: "Charging state"
   last_update:
     name: "Last update"
+  is_climate_on:
+    name: "Climate"
 
 button:
   - platform: template
