@@ -1393,6 +1393,12 @@ namespace esphome
       case SET_CHARGING_LIMIT:
         action_str = "setChargingLimit";
         break;
+      case FLASH_LIGHT:
+        action_str = "flashLight";
+        break;
+      case SOUND_HORN:
+        action_str = "soundHorn";
+        break;
       default:
         action_str = "setChargingParameters";
         break;
@@ -1463,6 +1469,14 @@ namespace esphome
         case SET_CHARGING_LIMIT:
           return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
             static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_chargingSetLimitAction_tag);
+          break;
+        case FLASH_LIGHT:
+          return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
+            static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_vehicleControlFlashLightsAction_tag);
+          break;
+        case SOUND_HORN:
+          return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
+            static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_vehicleControlHonkHornAction_tag);
           break;
         default:
           ESP_LOGE(TAG, "Invalid action: %d", static_cast<int>(action));
@@ -1640,11 +1654,15 @@ namespace esphome
           else if (carserver_response.response_msg.vehicleData.has_climate_state)
           {
             setClimateState (carserver_response.response_msg.vehicleData.climate_state.optional_is_climate_on.is_climate_on);
+            setInsideTemp (carserver_response.response_msg.vehicleData.climate_state.optional_inside_temp_celsius.inside_temp_celsius);
+            setOutsideTemp (carserver_response.response_msg.vehicleData.climate_state.optional_outside_temp_celsius.outside_temp_celsius);
             setLastUpdateState (ctime(&timestamp));
           }
           break;
+        case 0: // No data in the response but presumably otherwise ok (controls)
+          break;
         default:
-          ESP_LOGW (TAG, "[handleInfoCarServerResponse] Non vehicle data response.");
+          ESP_LOGW (TAG, "[handleInfoCarServerResponse] Non vehicle data response %d", carserver_response.which_response_msg);
       }
       return 0;
     }
