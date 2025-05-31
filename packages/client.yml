@@ -48,7 +48,11 @@ tesla_ble_vehicle:
     name: "Last update"
   is_climate_on:
     name: "Climate"
-
+  internal_temp:
+    name: "Interior"
+  external_temp:
+    name: "Exterior"
+      
 button:
   - platform: template
     id: ble_pair
@@ -62,7 +66,19 @@ button:
     name: Wake up
     icon: mdi:sleep-off
     on_press:
-      - lambda: id(tesla_ble_vehicle_id)->wakeVehicle();
+    - lambda: id(tesla_ble_vehicle_id)->wakeVehicle();
+
+  - platform: template
+    name: Flash light
+    icon: mdi:car-light-high
+    on_press:
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (FLASH_LIGHT, 0);
+
+  - platform: template
+    name: Sound horn
+    icon: mdi:bugle
+    on_press:
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (SOUND_HORN, 0);
 
   - platform: template
     name: Regenerate key
