@@ -27,6 +27,8 @@ CONF_BATTERY_RANGE = "battery_range"
 CONF_CHARGING_STATE = "charging_state"
 CONF_LAST_UPDATE = "last_update"
 CONF_IS_CLIMATE_ON = "is_climate_on"
+CONF_INTERNAL_TEMP = "internal_temp"
+CONF_EXTERNAL_TEMP = "external_temp"
 CONF_POST_WAKE_POLL_TIME = "post_wake_poll_time" # How long to poll for data after car awakes (s)
 CONF_POLL_DATA_PERIOD = "poll_data_period" # Normal period when polling for data when not asleep (s)
 CONF_POLL_ASLEEP_PERIOD = "poll_asleep_period" # Period to poll for data when asleep (s)
@@ -92,17 +94,23 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_IS_CLIMATE_ON): binary_sensor.binary_sensor_schema(
                 icon="mdi:fan"
             ).extend(),
+            cv.Optional(CONF_INTERNAL_TEMP): sensor.sensor_schema(
+                icon="mdi:car-outline", device_class=sensor.DEVICE_CLASS_TEMPERATURE,
+                accuracy_decimals=1, unit_of_measurement="°C"
+            ).extend(),
+            cv.Optional(CONF_EXTERNAL_TEMP): sensor.sensor_schema(
+                icon="mdi:sun-thermometer-outline", device_class=sensor.DEVICE_CLASS_TEMPERATURE,
+                accuracy_decimals=1, unit_of_measurement="°C"
+            ).extend(),
         }
     )
     .extend(cv.polling_component_schema("1min"))
     .extend(ble_client.BLE_CLIENT_SCHEMA)
 )
 
-
 async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
-
     await ble_client.register_ble_node(var, config)
 
     cg.add(var.set_vin(config[CONF_VIN]))
@@ -113,68 +121,63 @@ async def to_code(config):
         conf = config[CONF_IS_ASLEEP]
         bs = await binary_sensor.new_binary_sensor(conf)
         cg.add(var.set_binary_sensor_is_asleep(bs))
-
     if CONF_IS_UNLOCKED in config:
         conf = config[CONF_IS_UNLOCKED]
         bs = await binary_sensor.new_binary_sensor(conf)
         cg.add(var.set_binary_sensor_is_unlocked(bs))
-
     if CONF_IS_USER_PRESENT in config:
         conf = config[CONF_IS_USER_PRESENT]
         bs = await binary_sensor.new_binary_sensor(conf)
         cg.add(var.set_binary_sensor_is_user_present(bs))
-
     if CONF_IS_CHARGE_FLAP_OPEN in config:
         conf = config[CONF_IS_CHARGE_FLAP_OPEN]
         bs = await binary_sensor.new_binary_sensor(conf)
         cg.add(var.set_binary_sensor_is_charge_flap_open(bs))
-
     if CONF_SHIFT_STATE in config:
         conf = config[CONF_SHIFT_STATE]
         ts = await text_sensor.new_text_sensor(conf)
         cg.add(var.set_text_sensor_shift_state(ts))
-
     if CONF_CHARGE_STATE in config:
         conf = config[CONF_CHARGE_STATE]
         ss = await sensor.new_sensor(conf)
         cg.add(var.set_sensor_charge_state(ss))
-
     if CONF_ODOMETER in config:
         conf = config[CONF_ODOMETER]
         ss = await sensor.new_sensor(conf)
         cg.add(var.set_sensor_odometer_state(ss))
-
     if CONF_CHARGE_CURRENT in config:
         conf = config[CONF_CHARGE_CURRENT]
         ss = await sensor.new_sensor(conf)
         cg.add(var.set_sensor_charge_current_state(ss))
-
     if CONF_CHARGE_POWER in config:
         conf = config[CONF_CHARGE_POWER]
         ss = await sensor.new_sensor(conf)
         cg.add(var.set_sensor_charge_power_state(ss))
-
     if CONF_MAX_SOC in config:
         conf = config[CONF_MAX_SOC]
         ss = await sensor.new_sensor(conf)
         cg.add(var.set_sensor_max_soc_state(ss))
-
     if CONF_BATTERY_RANGE in config:
         conf = config[CONF_BATTERY_RANGE]
         ss = await sensor.new_sensor(conf)
         cg.add(var.set_sensor_battery_range_state(ss))
-
     if CONF_CHARGING_STATE in config:
         conf = config[CONF_CHARGING_STATE]
         ts = await text_sensor.new_text_sensor(conf)
         cg.add(var.set_text_sensor_charging_state(ts))
-
     if CONF_LAST_UPDATE in config:
         conf = config[CONF_LAST_UPDATE]
         ts = await text_sensor.new_text_sensor(conf)
         cg.add(var.set_text_sensor_last_update_state(ts))
-
     if CONF_IS_CLIMATE_ON in config:
         conf = config[CONF_IS_CLIMATE_ON]
         bs = await binary_sensor.new_binary_sensor(conf)
         cg.add(var.set_binary_sensor_is_climate_on(bs))
+    if CONF_INTERNAL_TEMP in config:
+        conf = config[CONF_INTERNAL_TEMP]
+        ss = await sensor.new_sensor(conf)
+        cg.add(var.set_sensor_internal_temp_state(ss))
+    if CONF_EXTERNAL_TEMP in config:
+        conf = config[CONF_EXTERNAL_TEMP]
+        ss = await sensor.new_sensor(conf)
+        cg.add(var.set_sensor_external_temp_state(ss))
