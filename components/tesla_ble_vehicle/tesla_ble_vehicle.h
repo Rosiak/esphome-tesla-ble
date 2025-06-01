@@ -176,6 +176,7 @@ namespace esphome
 
             int wakeVehicle(void);
             int sendVCSECActionMessage(VCSEC_RKEAction_E action);
+            int sendVCSECClosureMoveRequestMessage (int moveWhat, VCSEC_ClosureMoveType_E moveType);
             int sendCarServerVehicleActionMessage(BLE_CarServer_VehicleAction action, int param);
             int sendSessionInfoRequest(UniversalMessage_Domain domain);
             int sendVCSECInformationRequest(void);
