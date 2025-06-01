@@ -43,7 +43,8 @@ typedef enum BLE_CarServer_VehicleAction_E
     SET_OPEN_CHARGE_PORT_DOOR,
     SET_CLOSE_CHARGE_PORT_DOOR,
     SOUND_HORN,
-    FLASH_LIGHT 
+    FLASH_LIGHT,
+    SET_WINDOWS_SWITCH 
 } BLE_CarServer_VehicleAction;
 
 namespace esphome
