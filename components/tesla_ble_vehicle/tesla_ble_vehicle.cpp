@@ -1275,6 +1275,46 @@ namespace esphome
       return 0;
     }
 
+    int TeslaBLEVehicle::sendVCSECClosureMoveRequestMessage (int moveWhat, VCSEC_ClosureMoveType_E moveType)
+    {
+      ESP_LOGD(TAG, "Building sendVCSECClosureMoveRequestMessage");
+      unsigned char action_message_buffer[UniversalMessage_RoutableMessage_size];
+      size_t action_message_buffer_length = 0;
+      VCSEC_ClosureMoveRequest closureMoveRequest = VCSEC_ClosureMoveRequest_init_default; // initialise to do nothing on all
+      switch (moveWhat)
+      { // For the requested item, change the do nothing to do something
+        case VCSEC_ClosureMoveRequest_rearTrunk_tag:
+          closureMoveRequest.rearTrunk = moveType;
+          break;
+        case VCSEC_ClosureMoveRequest_frontTrunk_tag:
+          closureMoveRequest.frontTrunk = moveType;
+          break;
+        default:
+          ESP_LOGE (TAG, "Unhandled moveWhat requested %d", moveWhat);
+          return 1;
+      }
+
+      int return_code = tesla_ble_client_->buildVCSECClosureMoveRequestMessage (closureMoveRequest, action_message_buffer, &action_message_buffer_length);
+      if (return_code != 0)
+      {
+        if (return_code == TeslaBLE::TeslaBLE_Status_E_ERROR_INVALID_SESSION)
+        {
+          auto session = tesla_ble_client_->getPeer(UniversalMessage_Domain_DOMAIN_VEHICLE_SECURITY);
+          invalidateSession (UniversalMessage_Domain_DOMAIN_VEHICLE_SECURITY);
+        }
+        ESP_LOGE (TAG, "Failed to build ClosureMoveRequest message");
+        return return_code;
+      }
+
+      return_code = writeBLE(action_message_buffer, action_message_buffer_length, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
+      if (return_code != 0)
+      {
+        ESP_LOGE (TAG, "Failed to send ClosureMoveRequest message");
+        return return_code;
+      }
+      return 0;
+    }
+
     int TeslaBLEVehicle::wakeVehicle()
     {
       ESP_LOGI(TAG, "Waking vehicle");
