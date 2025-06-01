@@ -1439,6 +1439,9 @@ namespace esphome
       case SOUND_HORN:
         action_str = "soundHorn";
         break;
+      case SET_WINDOWS_SWITCH:
+        action_str = "windowsSwitch";
+        break;
       default:
         action_str = "setChargingParameters";
         break;
@@ -1517,6 +1520,10 @@ namespace esphome
         case SOUND_HORN:
           return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
             static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_vehicleControlHonkHornAction_tag);
+          break;
+        case SET_WINDOWS_SWITCH:
+          return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
+              static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_vehicleControlWindowAction_tag);
           break;
         default:
           ESP_LOGE(TAG, "Invalid action: %d", static_cast<int>(action));
