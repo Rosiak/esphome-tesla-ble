@@ -25,10 +25,12 @@ tesla_ble_vehicle:
   is_unlocked:
     name: "Doors"
   is_charge_flap_open:
+    id: "is_charge_flap_open"
     name: "Charge flap"
   shift_state:
     name: "Shift state"
   charge_state:
+    id: "charge_state"
     name: "Charge level"
   odometer:
     name: "Odometer"
@@ -39,6 +41,7 @@ tesla_ble_vehicle:
   charge_power:
     name: "Charge power"
   max_soc:
+    id: "max_soc"
     name: "Charge limit"
   battery_range:
     name: "Range"
@@ -47,6 +50,7 @@ tesla_ble_vehicle:
   last_update:
     name: "Last update"
   is_climate_on:
+    id: "is_climate_on"
     name: "Climate"
   internal_temp:
     name: "Interior"
@@ -137,7 +141,12 @@ switch:
     name: "Climate"
     optimistic: true
     icon: mdi:fan
-    assumed_state: true # we can't read the state 
+    lambda: |-
+      if (id(is_climate_on).state) {
+        return true;
+      } else {
+        return false;
+      }
     restore_mode: RESTORE_DEFAULT_OFF
     turn_on_action:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_HVAC_SWITCH, 1);
@@ -159,13 +168,29 @@ switch:
     name: "Charge port"
     optimistic: true
     icon: mdi:ev-plug-ccs2
-    assumed_state: true # we can't read the state 
+    lambda: |-
+      if (id(is_charge_flap_open).state) {
+        return true;
+      } else {
+        return false;
+      }
     restore_mode: RESTORE_DEFAULT_OFF
     turn_on_action:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_OPEN_CHARGE_PORT_DOOR,1);
     turn_off_action:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_CLOSE_CHARGE_PORT_DOOR,1);
-    
+
+  - platform: template
+    name: "Vent"
+    optimistic: true
+    icon: mdi:car-door
+    assumed_state: true # we can't read the state 
+    restore_mode: RESTORE_DEFAULT_OFF
+    turn_on_action:
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_WINDOWS_SWITCH,1);
+    turn_off_action:
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_WINDOWS_SWITCH,0);
+
   - platform: template
     name: "Boot"
     optimistic: true
@@ -205,13 +230,18 @@ number:
     icon: mdi:ev-station
     unit_of_measurement: "%"
     mode: slider
+    update_interval: 2s
     min_value: 50
     max_value: 100
     step: 1
-    optimistic: true
-    restore_value: true
-    on_value:
-      then:
-        - lambda: |-
-            int var_x = static_cast<int>(x);
-            id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_CHARGING_LIMIT, var_x);
+    set_action:
+      - lambda: |-
+          int var_x = static_cast<int>(x);
+          id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_CHARGING_LIMIT, var_x);
+    lambda: |-
+      if (id(max_soc).has_state())
+      {
+        return id(max_soc).state;
+      }
+      else return (0); 
+        
