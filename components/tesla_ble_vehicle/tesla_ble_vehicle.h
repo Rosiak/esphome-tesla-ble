@@ -238,6 +238,8 @@ namespace esphome
                     ChargingStateSensor->publish_state ("Unknown");
                     BatteryRangeStateSensor->publish_state (NAN);
                     isClimateOnSensor->set_has_state (state);
+                    insideTempStateSensor->publish_state (NAN);
+                    outsideTempStateSensor->publish_state (NAN);
                 }
 
             }
