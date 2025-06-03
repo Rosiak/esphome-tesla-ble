@@ -41,7 +41,10 @@ typedef enum BLE_CarServer_VehicleAction_E
     SET_HVAC_SWITCH,
     SET_HVAC_STEERING_HEATER_SWITCH,
     SET_OPEN_CHARGE_PORT_DOOR,
-    SET_CLOSE_CHARGE_PORT_DOOR
+    SET_CLOSE_CHARGE_PORT_DOOR,
+    SOUND_HORN,
+    FLASH_LIGHT,
+    SET_WINDOWS_SWITCH 
 } BLE_CarServer_VehicleAction;
 
 namespace esphome
@@ -174,6 +177,7 @@ namespace esphome
 
             int wakeVehicle(void);
             int sendVCSECActionMessage(VCSEC_RKEAction_E action);
+            int sendVCSECClosureMoveRequestMessage (int moveWhat, VCSEC_ClosureMoveType_E moveType);
             int sendCarServerVehicleActionMessage(BLE_CarServer_VehicleAction action, int param);
             int sendSessionInfoRequest(UniversalMessage_Domain domain);
             int sendVCSECInformationRequest(void);
@@ -234,6 +238,8 @@ namespace esphome
                     ChargingStateSensor->publish_state ("Unknown");
                     BatteryRangeStateSensor->publish_state (NAN);
                     isClimateOnSensor->set_has_state (state);
+                    insideTempStateSensor->publish_state (NAN);
+                    outsideTempStateSensor->publish_state (NAN);
                 }
 
             }
@@ -241,100 +247,98 @@ namespace esphome
             {
                 ChargeStateSensor->publish_state (battery_level);
             }
-
             void setCarOdometer (int odometer)
             {
                 OdometerStateSensor->publish_state (odometer);
             }
-
             void setChargeCurrent (int current)
             {
                 ChargeCurrentStateSensor->publish_state (current);
             }
-
             void setChargePower (int power)
             {
                 ChargePowerStateSensor->publish_state (power);
             }
-
             void setMaxSoc (int max)
             {
                 MaxSocStateSensor->publish_state (max);
             }
-
             void setBatteryRange (float range)
             {
                 BatteryRangeStateSensor->publish_state (range);
             }
-
             void setCarShiftState (std::string shift_state)
             {
                 ShiftStateSensor->publish_state (shift_state);
             }
-
             void setChargingState (std::string charging_state)
             {
                 ChargingStateSensor->publish_state (charging_state);
             }
-
             void setLastUpdateState (std::string last_update)
             {
                 LastUpdateStateSensor->publish_state (last_update);
             }
-
             void setClimateState (bool climate_state)
             {
                 isClimateOnSensor->publish_state (climate_state);
+            }
+            void setInsideTemp (float temp)
+            {
+                insideTempStateSensor->publish_state (temp);
+            }
+            void setOutsideTemp (float temp)
+            {
+                outsideTempStateSensor->publish_state (temp);
             }
 
             void set_text_sensor_shift_state (text_sensor::TextSensor *s)
             {
                 ShiftStateSensor = static_cast<text_sensor::TextSensor *>(s);
             }
-
             void set_text_sensor_charging_state (text_sensor::TextSensor *s)
             {
                 ChargingStateSensor = static_cast<text_sensor::TextSensor *>(s);
             }
-
             void set_text_sensor_last_update_state (text_sensor::TextSensor *s)
             {
                 LastUpdateStateSensor = static_cast<text_sensor::TextSensor *>(s);
             }
-
             void set_sensor_charge_state (sensor::Sensor *s)
             {
                 ChargeStateSensor = static_cast<sensor::Sensor *>(s);
             }
-
             void set_sensor_charge_current_state (sensor::Sensor *s)
             {
                 ChargeCurrentStateSensor = static_cast<sensor::Sensor *>(s);
             }
-
             void set_sensor_charge_power_state (sensor::Sensor *s)
             {
                 ChargePowerStateSensor = static_cast<sensor::Sensor *>(s);
             }
-
             void set_sensor_max_soc_state (sensor::Sensor *s)
             {
                 MaxSocStateSensor = static_cast<sensor::Sensor *>(s);
             }
-
             void set_sensor_battery_range_state (sensor::Sensor *s)
             {
                 BatteryRangeStateSensor = static_cast<sensor::Sensor *>(s);
             }
-
             void set_sensor_odometer_state (sensor::Sensor *s)
             {
                 OdometerStateSensor = static_cast<sensor::Sensor *>(s);
             }
-
             void set_binary_sensor_is_climate_on (binary_sensor::BinarySensor *s)
             {
                 isClimateOnSensor = static_cast<binary_sensor::CustomBinarySensor *>(s);
+            }
+            void set_sensor_internal_temp_state (sensor::Sensor *s)
+            {
+                insideTempStateSensor = static_cast<sensor::Sensor *>(s);
+            }
+            void set_sensor_external_temp_state (sensor::Sensor *s)
+            {
+                outsideTempStateSensor = static_cast<sensor::Sensor *>(s);
             }
 
             std::string lookup_shift_state (int shift_state)
@@ -398,6 +402,8 @@ namespace esphome
             sensor::Sensor *ChargePowerStateSensor;
             sensor::Sensor *MaxSocStateSensor;
             sensor::Sensor *BatteryRangeStateSensor;
+            sensor::Sensor *outsideTempStateSensor;
+            sensor::Sensor *insideTempStateSensor;
 
             std::vector<unsigned char> ble_read_buffer_;
 

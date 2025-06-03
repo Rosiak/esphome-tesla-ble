@@ -25,10 +25,12 @@ tesla_ble_vehicle:
   is_unlocked:
     name: "Doors"
   is_charge_flap_open:
+    id: "is_charge_flap_open"
     name: "Charge flap"
   shift_state:
     name: "Shift state"
   charge_state:
+    id: "charge_state"
     name: "Charge level"
   odometer:
     name: "Odometer"
@@ -39,6 +41,7 @@ tesla_ble_vehicle:
   charge_power:
     name: "Charge power"
   max_soc:
+    id: "max_soc"
     name: "Charge limit"
   battery_range:
     name: "Range"
@@ -47,8 +50,13 @@ tesla_ble_vehicle:
   last_update:
     name: "Last update"
   is_climate_on:
+    id: "is_climate_on"
     name: "Climate"
-
+  internal_temp:
+    name: "Interior"
+  external_temp:
+    name: "Exterior"
+      
 button:
   - platform: template
     id: ble_pair
@@ -62,8 +70,26 @@ button:
     name: Wake up
     icon: mdi:sleep-off
     on_press:
-      - lambda: id(tesla_ble_vehicle_id)->wakeVehicle();
+    - lambda: id(tesla_ble_vehicle_id)->wakeVehicle();
 
+  - platform: template
+    name: Flash light
+    icon: mdi:car-light-high
+    on_press:
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (FLASH_LIGHT, 0);
+
+  - platform: template
+    name: Sound horn
+    icon: mdi:bugle
+    on_press:
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (SOUND_HORN, 0);
+
+  - platform: template
+    name: Frunk
+    icon: mdi:car
+    on_press:
+      - lambda: id(tesla_ble_vehicle_id)->sendVCSECClosureMoveRequestMessage (VCSEC_ClosureMoveRequest_frontTrunk_tag, VCSEC_ClosureMoveType_E_CLOSURE_MOVE_TYPE_OPEN);
+  
   - platform: template
     name: Regenerate key
     icon: mdi:key-change
@@ -115,7 +141,12 @@ switch:
     name: "Climate"
     optimistic: true
     icon: mdi:fan
-    assumed_state: true # we can't read the state 
+    lambda: |-
+      if (id(is_climate_on).state) {
+        return true;
+      } else {
+        return false;
+      }
     restore_mode: RESTORE_DEFAULT_OFF
     turn_on_action:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_HVAC_SWITCH, 1);
@@ -137,13 +168,40 @@ switch:
     name: "Charge port"
     optimistic: true
     icon: mdi:ev-plug-ccs2
-    assumed_state: true # we can't read the state 
+    lambda: |-
+      if (id(is_charge_flap_open).state) {
+        return true;
+      } else {
+        return false;
+      }
     restore_mode: RESTORE_DEFAULT_OFF
     turn_on_action:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_OPEN_CHARGE_PORT_DOOR,1);
     turn_off_action:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_CLOSE_CHARGE_PORT_DOOR,1);
-    
+
+  - platform: template
+    name: "Vent"
+    optimistic: true
+    icon: mdi:car-door
+    assumed_state: true # we can't read the state 
+    restore_mode: RESTORE_DEFAULT_OFF
+    turn_on_action:
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_WINDOWS_SWITCH,1);
+    turn_off_action:
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_WINDOWS_SWITCH,0);
+
+  - platform: template
+    name: "Boot"
+    optimistic: true
+    icon: mdi:car-back
+    assumed_state: true # we can't read the state 
+    restore_mode: RESTORE_DEFAULT_OFF
+    turn_on_action:
+      - lambda: id(tesla_ble_vehicle_id)->sendVCSECClosureMoveRequestMessage (VCSEC_ClosureMoveRequest_rearTrunk_tag, VCSEC_ClosureMoveType_E_CLOSURE_MOVE_TYPE_OPEN);
+    turn_off_action:
+      - lambda: id(tesla_ble_vehicle_id)->sendVCSECClosureMoveRequestMessage (VCSEC_ClosureMoveRequest_rearTrunk_tag, VCSEC_ClosureMoveType_E_CLOSURE_MOVE_TYPE_CLOSE);
+      
   - platform: ble_client
     ble_client_id: ble_tesla_id
     name: "BLE Connection"
@@ -172,13 +230,18 @@ number:
     icon: mdi:ev-station
     unit_of_measurement: "%"
     mode: slider
+    update_interval: 2s
     min_value: 50
     max_value: 100
     step: 1
-    optimistic: true
-    restore_value: true
-    on_value:
-      then:
-        - lambda: |-
-            int var_x = static_cast<int>(x);
-            id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_CHARGING_LIMIT, var_x);
+    set_action:
+      - lambda: |-
+          int var_x = static_cast<int>(x);
+          id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_CHARGING_LIMIT, var_x);
+    lambda: |-
+      if (id(max_soc).has_state())
+      {
+        return id(max_soc).state;
+      }
+      else return (0); 
+        

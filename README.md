@@ -9,7 +9,7 @@ Tested with M5Stack NanoC6 and Tesla firmwares 2025.14.1.
 
 
 ## Features
-- Controls
+- Controls. Note these do not show the current value, they are controls only. For example, use the Climate sensor (see below) to see what if the climate is on or off.
    - Open/close charge port flap
    - Set charging amps
    - Set charging limit (%)
@@ -26,8 +26,10 @@ Tested with M5Stack NanoC6 and Tesla firmwares 2025.14.1.
   - Charge current (Amps)
   - Charging flap open / closed
   - Charge level (%)
+  - Charge power (kW)
   - Charge limit (%)
   - Charging state (eg Stopped, Charging)
+  - Climate (On or Off)
   - Last update (the last time a response was received from the Infotainment system, dows not go "Unknown")
   - Odometer (miles, see below for km)
   - Range (miles, see below for km)
