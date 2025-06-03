@@ -1,7 +1,6 @@
 # ESPHome Tesla BLE
 
 This project lets you use an ESP32 device to manage charging a Tesla vehicle over BLE. It is a fork of the [yoziru/esphome-tesla-ble](http://github.com/yoziru/esphome-tesla-ble) and the [yoziru/tesla-ble](http://github.com/yoziru/tesla-ble) library.
-Tested with M5Stack NanoC6 and Tesla firmwares 2025.14.1.
 
 | Controls | Sensors | Diagnostic |
 | - | - | - |
@@ -9,28 +8,35 @@ Tested with M5Stack NanoC6 and Tesla firmwares 2025.14.1.
 
 
 ## Features
-- Controls. Note these do not show the current value, they are controls only. For example, use the Climate sensor (see below) to see what if the climate is on or off.
-   - Open/close charge port flap
-   - Set charging amps
-   - Set charging limit (%)
+- Controls. Where indicated, these use the current sensor value for the control (but be aware that changing a value/state has a delay before it is reflected in the corresponding sensor - it takes time to send the messages to the vehicle to make the control and then read back the new value - it might look like the control has been rejected as the value reverts to the previous value; be patient!).
+   - Open/close boot
+   - Open/close charge port flap. Uses current sensor value
    - Turn on/off charger
-   - Turn on/off climate
+   - Set charging amps
+   - Set charging limit (%).  Uses current sensor value
+   - Turn on/off climate. Uses current sensor value
+   - Flash lights
+   - Open frunk
    - Turn on/off sentry mode
+   - Sound horn
    - Turn on/off steering wheel heater
+   - Vent/close windows
    - Wake up vehicle
 - Vehicle information sensors. There are two categories, those available even when asleep and those only when awake. Always available:
-  - Asleep / awake
-  - Doors locked / unlocked
-  - User present / not present
+  - Asleep/awake
+  - Doors locked/unlocked
+  - User present/not present
 - Only when awake:
   - Charge current (Amps)
-  - Charging flap open / closed
+  - Charging flap open/closed
   - Charge level (%)
-  - Charge power (kW)
   - Charge limit (%)
+  - Charge power (kW)
   - Charging state (eg Stopped, Charging)
   - Climate (On or Off)
-  - Last update (the last time a response was received from the Infotainment system, dows not go "Unknown")
+  - Exterior temperature (°C)
+  - Interior temperature (°C)
+  - Last update (the last time a response was received from the Infotainment system, dows not go "Unknown" once a response has been received)
   - Odometer (miles, see below for km)
   - Range (miles, see below for km)
   - Shift state (eg Invalid, R, N, D)
@@ -77,7 +83,6 @@ Note that if the other parameters are not multiples of *update_interval*, the ti
     ```sh
     make clean
     ```
-
 
 ### Building and flashing ESP32 firmware
 1. Connect your ESP32 device to your computer via USB
