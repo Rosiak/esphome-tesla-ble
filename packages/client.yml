@@ -27,6 +27,12 @@ tesla_ble_vehicle:
   is_charge_flap_open:
     id: "is_charge_flap_open"
     name: "Charge flap"
+  is_boot_open:
+    id: "is_boot_open"
+    name: "Boot"
+  is_frunk_open:
+    id: "is_frunk_open"
+    name: "Frunk"
   shift_state:
     name: "Shift state"
   charge_state:
@@ -43,6 +49,9 @@ tesla_ble_vehicle:
   max_soc:
     id: "max_soc"
     name: "Charge limit"
+  max_amps:
+    id: "max_amps"
+    name: "Current limit"
   battery_range:
     name: "Range"
   charging_state:
@@ -195,7 +204,12 @@ switch:
     name: "Boot"
     optimistic: true
     icon: mdi:car-back
-    assumed_state: true # we can't read the state 
+    lambda: |-
+      if (id(is_boot_open).state) {
+        return true;
+      } else {
+        return false;
+      }
     restore_mode: RESTORE_DEFAULT_OFF
     turn_on_action:
       - lambda: id(tesla_ble_vehicle_id)->sendVCSECClosureMoveRequestMessage (VCSEC_ClosureMoveRequest_rearTrunk_tag, VCSEC_ClosureMoveType_E_CLOSURE_MOVE_TYPE_OPEN);
@@ -214,16 +228,20 @@ number:
     icon: mdi:ev-station
     unit_of_measurement: "A"
     mode: slider
+    update_interval: 2s
     min_value: 0
     max_value: $charging_amps_max
     step: 1
-    optimistic: true
-    restore_value: true
-    on_value:
-      then:
-        - lambda: |-
-            int var_x = static_cast<int>(x);
-            id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_CHARGING_AMPS, var_x);
+    set_action:
+      - lambda: |-
+          int var_x = static_cast<int>(x);
+          id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_CHARGING_AMPS, var_x);
+    lambda: |-
+      if (id(max_amps).has_state())
+      {
+        return id(max_amps).state;
+      }
+      else return (0); 
   - platform: template
     name: "Charging limit"
     id: charging_limit
