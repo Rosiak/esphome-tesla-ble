@@ -1290,6 +1290,9 @@ namespace esphome
         case VCSEC_ClosureMoveRequest_frontTrunk_tag:
           closureMoveRequest.frontTrunk = moveType;
           break;
+        case VCSEC_ClosureMoveRequest_chargePort_tag:
+          closureMoveRequest.chargePort = moveType;
+          break;
         default:
           ESP_LOGE (TAG, "Unhandled moveWhat requested %d", moveWhat);
           return 1;
