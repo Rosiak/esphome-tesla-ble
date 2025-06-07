@@ -961,6 +961,7 @@ namespace esphome
           sendCarServerVehicleActionMessage (GET_CHARGE_STATE, 0);
           sendCarServerVehicleActionMessage (GET_DRIVE_STATE, 0);
           sendCarServerVehicleActionMessage (GET_CLIMATE_STATE, 0);
+          sendCarServerVehicleActionMessage (GET_CLOSURES_STATE, 0);
           if ((car_just_woken_ != 0) and ((millis() - car_wake_time_) > post_wake_poll_time_))
           {
             car_just_woken_ = 0;
@@ -1289,6 +1290,9 @@ namespace esphome
         case VCSEC_ClosureMoveRequest_frontTrunk_tag:
           closureMoveRequest.frontTrunk = moveType;
           break;
+        case VCSEC_ClosureMoveRequest_chargePort_tag:
+          closureMoveRequest.chargePort = moveType;
+          break;
         default:
           ESP_LOGE (TAG, "Unhandled moveWhat requested %d", moveWhat);
           return 1;
@@ -1389,7 +1393,7 @@ namespace esphome
     }
 
     // combined function for setting charging parameters
-    int TeslaBLEVehicle::sendCarServerVehicleActionMessage(BLE_CarServer_VehicleAction action, int param)
+/*    int TeslaBLEVehicle::sendCarServerVehicleActionMessage(BLE_CarServer_VehicleAction action, int param)
     {
       std::string action_str;
       switch (action)
@@ -1406,8 +1410,8 @@ namespace esphome
       case GET_LOCATION_STATE:
         action_str = "getLocationState";
         break;
-      case GET_CLOSURE_STATE:
-        action_str = "getClosureState";
+      case GET_CLOSURES_STATE:
+        action_str = "getClosuresState";
         break;
       case SET_CHARGING_SWITCH:
         action_str = "setChargingSwitch";
@@ -1472,7 +1476,7 @@ namespace esphome
           return_code = tesla_ble_client_->buildCarServerGetVehicleDataMessage (
               message_buffer, &message_length, CarServer_GetVehicleData_getLocationState_tag);
           break;
-        case GET_CLOSURE_STATE:
+        case GET_CLOSURES_STATE:
           return_code = tesla_ble_client_->buildCarServerGetVehicleDataMessage (
               message_buffer, &message_length, CarServer_GetVehicleData_getClosuresState_tag);
           break;
@@ -1548,6 +1552,68 @@ namespace esphome
         }
         return 0; },
           action_str);
+      return 0;
+    }*/
+
+    int TeslaBLEVehicle::sendCarServerVehicleActionMessage(BLE_CarServer_VehicleAction action, int param)
+    /*
+    *   Causes the appropriate message to be built using the ACTION_SPECIFICS table.
+    */
+    {
+      if (ACTION_SPECIFICS[action].localActionDef != action)
+      {
+        ESP_LOGE (TAG, "[%s] Action requested %d not that in specifics %d", ACTION_SPECIFICS[action].action_str.c_str(), action, ACTION_SPECIFICS[GET_CHARGE_STATE].localActionDef);
+        return 1;
+      }
+      std::string action_str;
+      action_str = ACTION_SPECIFICS[action].action_str;
+      ESP_LOGI(TAG, "[%s] Adding command to queue (param=%d)", action_str.c_str(), static_cast<int>(param));
+      command_queue_.emplace(
+          UniversalMessage_Domain_DOMAIN_INFOTAINMENT, [this, action, action_str, param]()
+          {
+        unsigned char message_buffer[UniversalMessage_RoutableMessage_size];
+        size_t message_length = 0;
+        int return_code = 0;
+        ESP_LOGI(TAG, "[%s] Building message..", action_str.c_str());
+        //if (ACTION_SPECIFICS[action].whichMsg == GetVehicleDataMessage)
+        switch (ACTION_SPECIFICS[action].whichMsg)
+        {
+          case GetVehicleDataMessage:
+          // Need to create a get vehicle data message
+            return_code = tesla_ble_client_->buildCarServerGetVehicleDataMessage (
+                message_buffer, &message_length, ACTION_SPECIFICS[action].actionTag);
+            break;
+          case VehicleActionMessage:
+          // Need to create a vehicle action message
+            return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
+              static_cast<int32_t>(param), message_buffer, &message_length, ACTION_SPECIFICS[action].actionTag);
+            if ((action == SET_CHARGING_SWITCH) and (param == 1))
+            { // If charging has been requested, enable continuous polling
+              car_is_charging_ = true;
+            }
+            break;
+        default:
+          ESP_LOGE(TAG, "Invalid action: %d", static_cast<int>(action));
+          return 1;
+        }
+        if (return_code != 0)
+        {
+          ESP_LOGE(TAG, "[%s] Failed to build message", action_str.c_str());
+          auto session = tesla_ble_client_->getPeer(UniversalMessage_Domain_DOMAIN_INFOTAINMENT);
+          if (return_code == TeslaBLE::TeslaBLE_Status_E_ERROR_INVALID_SESSION)
+          {
+            invalidateSession(UniversalMessage_Domain_DOMAIN_INFOTAINMENT);
+          }
+          return return_code;
+        }
+        return_code = writeBLE(message_buffer, message_length, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
+        if (return_code != 0)
+        {
+          ESP_LOGE(TAG, "[%s] Failed to send message", action_str.c_str());
+          return return_code;
+        }
+        return 0; },
+        action_str);
       return 0;
     }
 
@@ -1677,6 +1743,7 @@ namespace esphome
             setChargeCurrent (carserver_response.response_msg.vehicleData.charge_state.optional_charger_actual_current.charger_actual_current);
             setChargePower (carserver_response.response_msg.vehicleData.charge_state.optional_charger_power.charger_power);
             setMaxSoc (carserver_response.response_msg.vehicleData.charge_state.optional_charge_limit_soc.charge_limit_soc);
+            setMaxAmps (carserver_response.response_msg.vehicleData.charge_state.optional_charging_amps.charging_amps);
             setBatteryRange (carserver_response.response_msg.vehicleData.charge_state.optional_battery_range.battery_range);
             switch (carserver_response.response_msg.vehicleData.charge_state.charging_state.which_type)
             {
@@ -1704,6 +1771,11 @@ namespace esphome
             setInsideTemp (carserver_response.response_msg.vehicleData.climate_state.optional_inside_temp_celsius.inside_temp_celsius);
             setOutsideTemp (carserver_response.response_msg.vehicleData.climate_state.optional_outside_temp_celsius.outside_temp_celsius);
             setLastUpdateState (ctime(&timestamp));
+          }
+          else if (carserver_response.response_msg.vehicleData.has_closures_state)
+          {
+            setBootState (carserver_response.response_msg.vehicleData.closures_state.optional_door_open_trunk_rear.door_open_trunk_rear);
+            setFrunkState (carserver_response.response_msg.vehicleData.closures_state.optional_door_open_trunk_front.door_open_trunk_front);
           }
           break;
         case 0: // No data in the response but presumably otherwise ok (controls)

@@ -18,11 +18,14 @@ CONF_IS_UNLOCKED = "is_unlocked"
 CONF_IS_USER_PRESENT = "is_user_present"
 CONF_IS_CHARGE_FLAP_OPEN = "is_charge_flap_open"
 CONF_SHIFT_STATE = "shift_state"
+CONF_BOOT_STATE = "is_boot_open"
+CONF_FRUNK_STATE = "is_frunk_open"
 CONF_CHARGE_STATE = "charge_state"
 CONF_ODOMETER = "odometer"
 CONF_CHARGE_CURRENT = "charge_current"
 CONF_CHARGE_POWER = "charge_power"
 CONF_MAX_SOC = "max_soc"
+CONF_MAX_AMPS = "max_amps"
 CONF_BATTERY_RANGE = "battery_range"
 CONF_CHARGING_STATE = "charging_state"
 CONF_LAST_UPDATE = "last_update"
@@ -61,6 +64,12 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_SHIFT_STATE): text_sensor.text_sensor_schema(
                 icon="mdi:car-shift-pattern"
             ).extend(),
+            cv.Optional(CONF_BOOT_STATE): binary_sensor.binary_sensor_schema(
+                icon="mdi:car-back", device_class=binary_sensor.DEVICE_CLASS_DOOR
+            ).extend(),
+            cv.Optional(CONF_FRUNK_STATE): binary_sensor.binary_sensor_schema(
+                icon="mdi:car", device_class=binary_sensor.DEVICE_CLASS_DOOR
+            ).extend(),
             cv.Optional(CONF_CHARGE_STATE): sensor.sensor_schema(
                 icon="mdi:battery-medium", device_class=sensor.DEVICE_CLASS_BATTERY,
                 unit_of_measurement="%"
@@ -80,6 +89,10 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_MAX_SOC): sensor.sensor_schema(
                 icon="mdi:battery-lock", device_class=sensor.DEVICE_CLASS_ENERGY_STORAGE,
                 unit_of_measurement="%"
+            ).extend(),
+            cv.Optional(CONF_MAX_AMPS): sensor.sensor_schema(
+                icon="mdi:current-ac", device_class=sensor.DEVICE_CLASS_CURRENT,
+                unit_of_measurement="A"
             ).extend(),
             cv.Optional(CONF_BATTERY_RANGE): sensor.sensor_schema(
                 icon="mdi:gauge", device_class=sensor.DEVICE_CLASS_DISTANCE,
@@ -137,6 +150,14 @@ async def to_code(config):
         conf = config[CONF_SHIFT_STATE]
         ts = await text_sensor.new_text_sensor(conf)
         cg.add(var.set_text_sensor_shift_state(ts))
+    if CONF_BOOT_STATE in config:
+        conf = config[CONF_BOOT_STATE]
+        bs = await binary_sensor.new_binary_sensor(conf)
+        cg.add(var.set_binary_sensor_is_boot_open(bs))
+    if CONF_FRUNK_STATE in config:
+        conf = config[CONF_FRUNK_STATE]
+        bs = await binary_sensor.new_binary_sensor(conf)
+        cg.add(var.set_binary_sensor_is_frunk_open(bs))
     if CONF_CHARGE_STATE in config:
         conf = config[CONF_CHARGE_STATE]
         ss = await sensor.new_sensor(conf)
@@ -157,6 +178,10 @@ async def to_code(config):
         conf = config[CONF_MAX_SOC]
         ss = await sensor.new_sensor(conf)
         cg.add(var.set_sensor_max_soc_state(ss))
+    if CONF_MAX_AMPS in config:
+        conf = config[CONF_MAX_AMPS]
+        ss = await sensor.new_sensor(conf)
+        cg.add(var.set_sensor_max_amps_state(ss))
     if CONF_BATTERY_RANGE in config:
         conf = config[CONF_BATTERY_RANGE]
         ss = await sensor.new_sensor(conf)

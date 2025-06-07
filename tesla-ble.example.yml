@@ -35,7 +35,7 @@ esphome:
   friendly_name: ${friendly_name}
   libraries:
     - https://github.com/PedroKTFC/tesla-ble.git
-   
+
 tesla_ble_vehicle:
   odometer:
     name: "Odometer" # Rename if desired

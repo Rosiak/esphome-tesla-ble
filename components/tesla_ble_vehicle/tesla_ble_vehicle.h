@@ -33,7 +33,7 @@ typedef enum BLE_CarServer_VehicleAction_E
     GET_CLIMATE_STATE,
     GET_DRIVE_STATE,
     GET_LOCATION_STATE,
-    GET_CLOSURE_STATE,
+    GET_CLOSURES_STATE,
     SET_CHARGING_SWITCH,
     SET_CHARGING_AMPS,
     SET_CHARGING_LIMIT,
@@ -47,12 +47,53 @@ typedef enum BLE_CarServer_VehicleAction_E
     SET_WINDOWS_SWITCH 
 } BLE_CarServer_VehicleAction;
 
+typedef enum // The type of messages to send
+{
+    VehicleActionMessage,
+    GetVehicleDataMessage
+} AllowedMsg;
+
+/*
+*   This defines the contents of the rows of the ACTION_SPECIFICS table below. For every localActionDef, this describes the specific
+*   contents for the message to send to the car. The rows of the table must be in the same order as BLE_CarServer_VehicleAction.
+*   If a new message is needed, simply add a row to the table with the appropriate contents, no need to edit the code in the .cpp.
+*/
+struct ActionMessageDetail
+{
+    BLE_CarServer_VehicleAction_E localActionDef;
+    std::string action_str;
+    AllowedMsg whichMsg;
+    int actionTag;
+};
+
 namespace esphome
 {
 
     namespace tesla_ble_vehicle
     {
         namespace espbt = esphome::esp32_ble_tracker;
+
+        static const struct ActionMessageDetail ACTION_SPECIFICS[] =
+        {
+            {GET_CHARGE_STATE,                 "getChargeState",            GetVehicleDataMessage, CarServer_GetVehicleData_getChargeState_tag},
+            {GET_CLIMATE_STATE,                "getClimateState",           GetVehicleDataMessage, CarServer_GetVehicleData_getClimateState_tag},
+            {GET_DRIVE_STATE,                  "getDriveState",             GetVehicleDataMessage, CarServer_GetVehicleData_getDriveState_tag},
+            {GET_LOCATION_STATE,               "getLocationState",          GetVehicleDataMessage, CarServer_GetVehicleData_getLocationState_tag},
+            {GET_CLOSURES_STATE,               "getClosuresState",          GetVehicleDataMessage, CarServer_GetVehicleData_getClosuresState_tag},
+            {SET_CHARGING_SWITCH,              "setChargingSwitch",         VehicleActionMessage,  CarServer_VehicleAction_chargingStartStopAction_tag},
+            {SET_CHARGING_AMPS,                "setChargingAmps",           VehicleActionMessage,  CarServer_VehicleAction_setChargingAmpsAction_tag},
+            {SET_CHARGING_LIMIT,               "setChargingLimit",          VehicleActionMessage,  CarServer_VehicleAction_chargingSetLimitAction_tag},
+            {SET_SENTRY_SWITCH,                "setSentrySwitch",           VehicleActionMessage,  CarServer_VehicleAction_vehicleControlSetSentryModeAction_tag},
+            {SET_HVAC_SWITCH,                  "setHVACSwitch",             VehicleActionMessage,  CarServer_VehicleAction_hvacAutoAction_tag},
+            {SET_HVAC_STEERING_HEATER_SWITCH,  "setHVACSteeringHeatSwitch", VehicleActionMessage,  CarServer_VehicleAction_hvacSteeringWheelHeaterAction_tag},
+            {SET_OPEN_CHARGE_PORT_DOOR,        "setOpenChargePortDoor",     VehicleActionMessage,  CarServer_VehicleAction_chargePortDoorOpen_tag},
+            {SET_CLOSE_CHARGE_PORT_DOOR,       "setCloseChargePortDoor",    VehicleActionMessage,  CarServer_VehicleAction_chargePortDoorClose_tag},
+            {SOUND_HORN,                       "soundHorn",                 VehicleActionMessage,  CarServer_VehicleAction_vehicleControlHonkHornAction_tag},
+            {FLASH_LIGHT,                      "flashLight",                VehicleActionMessage,  CarServer_VehicleAction_vehicleControlFlashLightsAction_tag},
+            {SET_WINDOWS_SWITCH,               "setWindowsSwitch",          VehicleActionMessage,  CarServer_VehicleAction_vehicleControlWindowAction_tag}
+        };
+    
+
 
         static const char *const TAG = "tesla_ble_vehicle";
         static const char *nvs_key_infotainment = "tk_infotainment";
@@ -234,12 +275,15 @@ namespace esphome
                     ChargeCurrentStateSensor->publish_state (NAN);
                     ChargePowerStateSensor->publish_state (NAN);
                     MaxSocStateSensor->publish_state (NAN);
+                    MaxAmpsStateSensor->publish_state (NAN);
                     ShiftStateSensor->publish_state ("Unknown");
                     ChargingStateSensor->publish_state ("Unknown");
                     BatteryRangeStateSensor->publish_state (NAN);
                     isClimateOnSensor->set_has_state (state);
                     insideTempStateSensor->publish_state (NAN);
                     outsideTempStateSensor->publish_state (NAN);
+                    isBootOpenSensor->set_has_state (state);
+                    isFrunkOpenSensor->set_has_state (state);
                 }
 
             }
@@ -263,6 +307,10 @@ namespace esphome
             {
                 MaxSocStateSensor->publish_state (max);
             }
+            void setMaxAmps (int max)
+            {
+                MaxAmpsStateSensor->publish_state (max);
+            }
             void setBatteryRange (float range)
             {
                 BatteryRangeStateSensor->publish_state (range);
@@ -282,6 +330,14 @@ namespace esphome
             void setClimateState (bool climate_state)
             {
                 isClimateOnSensor->publish_state (climate_state);
+            }
+            void setBootState (bool boot_state)
+            {
+                isBootOpenSensor->publish_state (boot_state);
+            }
+            void setFrunkState (bool frunk_state)
+            {
+                isFrunkOpenSensor->publish_state (frunk_state);
             }
             void setInsideTemp (float temp)
             {
@@ -320,6 +376,10 @@ namespace esphome
             {
                 MaxSocStateSensor = static_cast<sensor::Sensor *>(s);
             }
+            void set_sensor_max_amps_state (sensor::Sensor *s)
+            {
+                MaxAmpsStateSensor = static_cast<sensor::Sensor *>(s);
+            }
             void set_sensor_battery_range_state (sensor::Sensor *s)
             {
                 BatteryRangeStateSensor = static_cast<sensor::Sensor *>(s);
@@ -331,6 +391,14 @@ namespace esphome
             void set_binary_sensor_is_climate_on (binary_sensor::BinarySensor *s)
             {
                 isClimateOnSensor = static_cast<binary_sensor::CustomBinarySensor *>(s);
+            }
+            void set_binary_sensor_is_boot_open (binary_sensor::BinarySensor *s)
+            {
+                isBootOpenSensor = static_cast<binary_sensor::CustomBinarySensor *>(s);
+            }
+            void set_binary_sensor_is_frunk_open (binary_sensor::BinarySensor *s)
+            {
+                isFrunkOpenSensor = static_cast<binary_sensor::CustomBinarySensor *>(s);
             }
             void set_sensor_internal_temp_state (sensor::Sensor *s)
             {
@@ -393,6 +461,8 @@ namespace esphome
             binary_sensor::CustomBinarySensor *isUserPresentSensor;
             binary_sensor::CustomBinarySensor *isChargeFlapOpenSensor;
             binary_sensor::CustomBinarySensor *isClimateOnSensor;
+            binary_sensor::CustomBinarySensor *isBootOpenSensor;
+            binary_sensor::CustomBinarySensor *isFrunkOpenSensor;
             text_sensor::TextSensor *ShiftStateSensor;
             text_sensor::TextSensor *ChargingStateSensor;
             text_sensor::TextSensor *LastUpdateStateSensor;
@@ -401,6 +471,7 @@ namespace esphome
             sensor::Sensor *ChargeCurrentStateSensor;
             sensor::Sensor *ChargePowerStateSensor;
             sensor::Sensor *MaxSocStateSensor;
+            sensor::Sensor *MaxAmpsStateSensor;
             sensor::Sensor *BatteryRangeStateSensor;
             sensor::Sensor *outsideTempStateSensor;
             sensor::Sensor *insideTempStateSensor;
