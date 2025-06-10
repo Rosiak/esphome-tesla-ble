@@ -16,7 +16,7 @@ esphome:
   comment: ${device_description}
   project:
     name: PedroKTFC.esphome-tesla-ble
-    version: "2025.0.4"
+    version: "2025.0.4.dev"
 logger:
   level: INFO
 
