@@ -58,6 +58,7 @@ tesla_ble_vehicle:
   battery_range:
     name: "Range"
   charging_state:
+    id: "charging_state"
     name: "Charging state"
   last_update:
     name: "Last update"
@@ -97,12 +98,6 @@ button:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (SOUND_HORN, 0);
 
   - platform: template
-    name: Frunk
-    icon: mdi:car
-    on_press:
-      - lambda: id(tesla_ble_vehicle_id)->sendVCSECClosureMoveRequestMessage (VCSEC_ClosureMoveRequest_frontTrunk_tag, VCSEC_ClosureMoveType_E_CLOSURE_MOVE_TYPE_OPEN);
-  
-  - platform: template
     name: Unlock charge port
     icon: mdi:ev-plug-ccs2
     on_press:
@@ -137,8 +132,13 @@ switch:
     name: "Charger"
     optimistic: true
     icon: mdi:lightning-bolt
-    assumed_state: true # we can't read the state of the charger over
     restore_mode: RESTORE_DEFAULT_OFF
+    lambda: |-
+      if (id(charging_state).state == "Charging") {
+        return true;
+      } else {
+        return false;
+      }
     turn_on_action:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_CHARGING_SWITCH, 1);
     turn_off_action:
@@ -183,33 +183,6 @@ switch:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_HVAC_STEERING_HEATER_SWITCH, 0);
   
   - platform: template
-    name: "Charge port"
-    optimistic: true
-    icon: mdi:ev-plug-ccs2
-    lambda: |-
-      if (id(is_charge_flap_open).state) {
-        return true;
-      } else {
-        return false;
-      }
-    restore_mode: RESTORE_DEFAULT_OFF
-    turn_on_action:
-      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_OPEN_CHARGE_PORT_DOOR,1);
-    turn_off_action:
-      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_CLOSE_CHARGE_PORT_DOOR,1);
-
-  - platform: template
-    name: "Vent"
-    optimistic: true
-    icon: mdi:car-door
-    assumed_state: true # we can't read the state 
-    restore_mode: RESTORE_DEFAULT_OFF
-    turn_on_action:
-      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (SET_WINDOWS_SWITCH, 1);
-    turn_off_action:
-      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (SET_WINDOWS_SWITCH, 0);
-
-  - platform: template
     name: Defrost car
     optimistic: true
     icon: mdi:snowflake-melt
@@ -223,28 +196,73 @@ switch:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (DEFROST_CAR, 1);
     turn_off_action:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (DEFROST_CAR, 0);
-
-  - platform: template
-    name: "Boot"
-    optimistic: true
-    icon: mdi:car-back
-    lambda: |-
-      if (id(is_boot_open).state) {
-        return true;
-      } else {
-        return false;
-      }
-    restore_mode: RESTORE_DEFAULT_OFF
-    turn_on_action:
-      - lambda: id(tesla_ble_vehicle_id)->sendVCSECClosureMoveRequestMessage (VCSEC_ClosureMoveRequest_rearTrunk_tag, VCSEC_ClosureMoveType_E_CLOSURE_MOVE_TYPE_OPEN);
-    turn_off_action:
-      - lambda: id(tesla_ble_vehicle_id)->sendVCSECClosureMoveRequestMessage (VCSEC_ClosureMoveRequest_rearTrunk_tag, VCSEC_ClosureMoveType_E_CLOSURE_MOVE_TYPE_CLOSE);
       
   - platform: ble_client
     ble_client_id: ble_tesla_id
     name: "BLE Connection"
     entity_category: diagnostic
 
+cover:
+  - platform: template
+    name: "Vent"
+    optimistic: true
+#    device_class: door
+    icon: mdi:car-door
+    assumed_state: false # we can't read the state 
+    close_action: # This way round to make the arrows follow the desired window motion
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (SET_WINDOWS_SWITCH, 1);
+    open_action:
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (SET_WINDOWS_SWITCH, 0);
+
+  - platform: template
+    name: "Charge port"
+    optimistic: true
+    device_class: door
+    icon: mdi:ev-plug-ccs2
+    lambda: |-
+      if (id(is_charge_flap_open).state) {
+        return COVER_OPEN;
+      } else {
+        return COVER_CLOSED;
+      }
+#    restore_mode: RESTORE_DEFAULT_OFF
+    open_action:
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_OPEN_CHARGE_PORT_DOOR,1);
+    close_action:
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_CLOSE_CHARGE_PORT_DOOR,1);
+  
+  - platform: template
+    name: "Boot"
+    optimistic: true
+    device_class: door
+    icon: mdi:car-back
+    lambda: |-
+      if (id(is_boot_open).state) {
+        return COVER_OPEN;
+      } else {
+        return COVER_CLOSED;
+      }
+#    restore_mode: RESTORE_DEFAULT_OFF
+    open_action:
+      - lambda: id(tesla_ble_vehicle_id)->sendVCSECClosureMoveRequestMessage (VCSEC_ClosureMoveRequest_rearTrunk_tag, VCSEC_ClosureMoveType_E_CLOSURE_MOVE_TYPE_OPEN);
+    close_action:
+      - lambda: id(tesla_ble_vehicle_id)->sendVCSECClosureMoveRequestMessage (VCSEC_ClosureMoveRequest_rearTrunk_tag, VCSEC_ClosureMoveType_E_CLOSURE_MOVE_TYPE_CLOSE);
+
+  - platform: template
+    name: "Frunk"
+    optimistic: true
+    device_class: door
+    icon: mdi:car
+    assumed_state: true # we can't read the state 
+    lambda: |-
+      if (id(is_frunk_open).state) {
+        return COVER_OPEN;
+      } else {
+        return COVER_CLOSED;
+      }
+    open_action:
+      - lambda: id(tesla_ble_vehicle_id)->sendVCSECClosureMoveRequestMessage (VCSEC_ClosureMoveRequest_frontTrunk_tag, VCSEC_ClosureMoveType_E_CLOSURE_MOVE_TYPE_OPEN);
+    
 number:
   - platform: template
     name: "Charging amps"
