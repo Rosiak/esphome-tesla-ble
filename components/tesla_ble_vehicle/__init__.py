@@ -112,7 +112,7 @@ CONFIG_SCHEMA = (
                 icon="mdi:fan"
             ).extend(),
             cv.Optional(CONF_INTERNAL_TEMP): sensor.sensor_schema(
-                icon="mdi:car-outline", device_class=sensor.DEVICE_CLASS_TEMPERATURE,
+                icon="mdi:thermometer", device_class=sensor.DEVICE_CLASS_TEMPERATURE,
                 accuracy_decimals=1, unit_of_measurement="°C"
             ).extend(),
             cv.Optional(CONF_EXTERNAL_TEMP): sensor.sensor_schema(
