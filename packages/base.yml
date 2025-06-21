@@ -1,28 +1,13 @@
 substitutions:
-  friendly_name: Tesla BLE
-  device_name: tesla-ble
   device_description: Interact with Tesla vehicles over BLE using ESPHome and Home Assistant
 
-packages:
-  board: !include board.yml
-  common: !include common.yml
-  project: !include project.yml
-  # listener: !include listener.yml # Uncomment this to scan find your VIN BLE MAC address
-
 esphome:
-  name: ${device_name}
-  name_add_mac_suffix: true
-  friendly_name: ${friendly_name}
-  comment: ${device_description}
   project:
     name: PedroKTFC.esphome-tesla-ble
     version: "2025.0.5.dev"
+
 logger:
   level: INFO
-
-api:
-  encryption:
-    key: !secret api_encryption_key
 
 ota:
   platform: esphome
