@@ -12,6 +12,12 @@ substitutions:
   tesla_vin: !secret tesla_vin
   charging_amps_max: "32"
 
+esp32:
+  board: esp32dev  # set as needed for your board
+  framework:
+    type: esp-idf
+    version: 5.3.2
+
 api:
   encryption:
     key: xxxxxxxxxxxxx=
@@ -25,7 +31,8 @@ external_components:
 
 packages:
   base:  github://PedroKTFC/esphome-tesla-ble/packages/base.yml
-  device_base: github://PedroKTFC/esphome-tesla-ble/boards/esp32-generic.yml
+  common: github://PedroKTFC/esphome-tesla-ble/packages/common.yml
+  project: github://PedroKTFC/esphome-tesla-ble/packages/project.yml
   client: github://PedroKTFC/esphome-tesla-ble/packages/client.yml
   # listener: github://PedroKTFC/esphome-tesla-ble/packages/listener.yml # Uncomment this to scan find your VIN BLE MAC address
 
