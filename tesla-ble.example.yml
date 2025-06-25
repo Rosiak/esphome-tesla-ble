@@ -37,16 +37,10 @@ esphome:
     - https://github.com/PedroKTFC/tesla-ble.git
 
 tesla_ble_vehicle:
-  odometer:
+  odometer: # miles by default, edit the entity in home assistant if you need km
     name: "Odometer" # Rename if desired
-    unit_of_measurement: "km"
-    filters:
-      - multiply: 1.60934 # Convert miles to kms
-  battery_range:
+  battery_range: # miles by default, edit the entity in home assistant if you need km
     name: "Range"
-    unit_of_measurement: "km"
-    filters:
-      - multiply: 1.60934 # Convert miles to kms
   update_interval: 2s # Base polling interval, used for VCSEC sensors
   post_wake_poll_time: 300 # How long to poll for data after car awakes (s)
   poll_data_period: 60 # Normal period when polling for data when not asleep (s)
