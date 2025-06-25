@@ -49,7 +49,7 @@ This project lets you use an ESP32 device to manage charging a Tesla vehicle ove
 
 ## Usage
 
-For an example ESPHome dashboard, see [`tesla-ble-example.yml`](./tesla-ble.example.yml). This includes an example of how to use km instead of miles. There are several key parameters that determine the polling activity as follows:
+For an example ESPHome dashboard, see [`tesla-ble-example.yml`](./tesla-ble.example.yml). There are several key parameters that determine the polling activity as follows:
 
 - **update_interval**: This is the base polling rate. **No other polls can happen faster than this even if you configure them shorter.** The VCSEC system is polled at this rate and does not wake the car. [Default 10s]
 - **post_wake_poll_time**: If the vehicle wakes up, it will be detected and the vehicle polled for data for at least this time [Default 300s]
@@ -61,6 +61,10 @@ For an example ESPHome dashboard, see [`tesla-ble-example.yml`](./tesla-ble.exam
 If the vehicle is unlocked or a person is detected as present in the vehicle, the vehicle will be polled at *update_interval* until it is locked and/or no person is present in the vehicle. This could be useful if you wish to quickly detect a change in the vehicle (for example, I use it to detect when it is put into gear so I can trigger an automation to open my electric gate).
 
 Note that if the other parameters are not multiples of *update_interval*, the timings will be longer than expected. For example, if *update_interval* is set to 30s and *poll_data_period* is set to 75s, then the effective *poll_data_period* will be 90s.
+
+## Miles vs Km
+
+By default the car reports miles, so this integration returns miles. In home assistant you can edit the sensor and select the prefered unit of measurement there.
 
 ### Pre-requisites
 - Python 3.10+
