@@ -80,7 +80,7 @@ CONFIG_SCHEMA = (
             ).extend(),
             cv.Optional(CONF_ODOMETER): sensor.sensor_schema(
                 icon="mdi:counter", device_class=sensor.DEVICE_CLASS_DISTANCE,
-                accuracy_decimals=2, unit_of_measurement="miles"
+                accuracy_decimals=2, unit_of_measurement="mi"
             ).extend(),
             cv.Optional(CONF_CHARGE_CURRENT): sensor.sensor_schema(
                 icon="mdi:current-ac", device_class=sensor.DEVICE_CLASS_CURRENT,
@@ -100,7 +100,7 @@ CONFIG_SCHEMA = (
             ).extend(),
             cv.Optional(CONF_BATTERY_RANGE): sensor.sensor_schema(
                 icon="mdi:gauge", device_class=sensor.DEVICE_CLASS_DISTANCE,
-                accuracy_decimals=2, unit_of_measurement="miles"
+                accuracy_decimals=2, unit_of_measurement="mi"
             ).extend(),
             cv.Optional(CONF_CHARGING_STATE): text_sensor.text_sensor_schema(
                 icon="mdi:ev-station"
