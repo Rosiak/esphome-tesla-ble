@@ -121,6 +121,7 @@ button:
 sensor:
   - platform: ble_client
     type: rssi
+    id: ble_signal
     ble_client_id: ble_tesla_id
     name: "BLE Signal"
     icon: mdi:bluetooth
