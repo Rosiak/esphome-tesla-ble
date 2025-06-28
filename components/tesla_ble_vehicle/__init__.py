@@ -18,6 +18,7 @@ CONF_IS_UNLOCKED = "is_unlocked"
 CONF_IS_USER_PRESENT = "is_user_present"
 CONF_IS_CHARGE_FLAP_OPEN = "is_charge_flap_open"
 CONF_SHIFT_STATE = "shift_state"
+CONF_DEFROST_STATE = "defrost_state"
 CONF_BOOT_STATE = "is_boot_open"
 CONF_FRUNK_STATE = "is_frunk_open"
 CONF_CHARGE_STATE = "charge_state"
@@ -61,6 +62,9 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_IS_CHARGE_FLAP_OPEN): binary_sensor.binary_sensor_schema(
                 icon="mdi:ev-plug-tesla", device_class=binary_sensor.DEVICE_CLASS_DOOR
             ).extend(),
+            cv.Optional(CONF_DEFROST_STATE): text_sensor.text_sensor_schema(
+                icon="mdi:snowflake-melt"
+            ).extend(),
             cv.Optional(CONF_SHIFT_STATE): text_sensor.text_sensor_schema(
                 icon="mdi:car-shift-pattern"
             ).extend(),
@@ -76,7 +80,7 @@ CONFIG_SCHEMA = (
             ).extend(),
             cv.Optional(CONF_ODOMETER): sensor.sensor_schema(
                 icon="mdi:counter", device_class=sensor.DEVICE_CLASS_DISTANCE,
-                accuracy_decimals=2, unit_of_measurement="miles"
+                accuracy_decimals=2, unit_of_measurement="mi"
             ).extend(),
             cv.Optional(CONF_CHARGE_CURRENT): sensor.sensor_schema(
                 icon="mdi:current-ac", device_class=sensor.DEVICE_CLASS_CURRENT,
@@ -96,7 +100,7 @@ CONFIG_SCHEMA = (
             ).extend(),
             cv.Optional(CONF_BATTERY_RANGE): sensor.sensor_schema(
                 icon="mdi:gauge", device_class=sensor.DEVICE_CLASS_DISTANCE,
-                accuracy_decimals=2, unit_of_measurement="miles"
+                accuracy_decimals=2, unit_of_measurement="mi"
             ).extend(),
             cv.Optional(CONF_CHARGING_STATE): text_sensor.text_sensor_schema(
                 icon="mdi:ev-station"
@@ -108,7 +112,7 @@ CONFIG_SCHEMA = (
                 icon="mdi:fan"
             ).extend(),
             cv.Optional(CONF_INTERNAL_TEMP): sensor.sensor_schema(
-                icon="mdi:car-outline", device_class=sensor.DEVICE_CLASS_TEMPERATURE,
+                icon="mdi:thermometer", device_class=sensor.DEVICE_CLASS_TEMPERATURE,
                 accuracy_decimals=1, unit_of_measurement="°C"
             ).extend(),
             cv.Optional(CONF_EXTERNAL_TEMP): sensor.sensor_schema(
@@ -150,6 +154,10 @@ async def to_code(config):
         conf = config[CONF_SHIFT_STATE]
         ts = await text_sensor.new_text_sensor(conf)
         cg.add(var.set_text_sensor_shift_state(ts))
+    if CONF_DEFROST_STATE in config:
+        conf = config[CONF_DEFROST_STATE]
+        ts = await text_sensor.new_text_sensor(conf)
+        cg.add(var.set_text_sensor_defrost_state(ts))
     if CONF_BOOT_STATE in config:
         conf = config[CONF_BOOT_STATE]
         bs = await binary_sensor.new_binary_sensor(conf)

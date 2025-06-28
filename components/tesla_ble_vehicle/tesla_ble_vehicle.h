@@ -44,7 +44,8 @@ typedef enum BLE_CarServer_VehicleAction_E
     SET_CLOSE_CHARGE_PORT_DOOR,
     SOUND_HORN,
     FLASH_LIGHT,
-    SET_WINDOWS_SWITCH 
+    SET_WINDOWS_SWITCH,
+    DEFROST_CAR
 } BLE_CarServer_VehicleAction;
 
 typedef enum // The type of messages to send
@@ -90,10 +91,9 @@ namespace esphome
             {SET_CLOSE_CHARGE_PORT_DOOR,       "setCloseChargePortDoor",    VehicleActionMessage,  CarServer_VehicleAction_chargePortDoorClose_tag},
             {SOUND_HORN,                       "soundHorn",                 VehicleActionMessage,  CarServer_VehicleAction_vehicleControlHonkHornAction_tag},
             {FLASH_LIGHT,                      "flashLight",                VehicleActionMessage,  CarServer_VehicleAction_vehicleControlFlashLightsAction_tag},
-            {SET_WINDOWS_SWITCH,               "setWindowsSwitch",          VehicleActionMessage,  CarServer_VehicleAction_vehicleControlWindowAction_tag}
+            {SET_WINDOWS_SWITCH,               "setWindowsSwitch",          VehicleActionMessage,  CarServer_VehicleAction_vehicleControlWindowAction_tag},
+            {DEFROST_CAR,                      "defrostCar",                VehicleActionMessage,  CarServer_VehicleAction_hvacSetPreconditioningMaxAction_tag}
         };
-    
-
 
         static const char *const TAG = "tesla_ble_vehicle";
         static const char *nvs_key_infotainment = "tk_infotainment";
@@ -277,6 +277,7 @@ namespace esphome
                     MaxSocStateSensor->publish_state (NAN);
                     MaxAmpsStateSensor->publish_state (NAN);
                     ShiftStateSensor->publish_state ("Unknown");
+                    DefrostStateSensor->publish_state ("Unknown");
                     ChargingStateSensor->publish_state ("Unknown");
                     BatteryRangeStateSensor->publish_state (NAN);
                     isClimateOnSensor->set_has_state (state);
@@ -319,6 +320,10 @@ namespace esphome
             {
                 ShiftStateSensor->publish_state (shift_state);
             }
+            void setDefrostState (std::string defrost_state)
+            {
+                DefrostStateSensor->publish_state (defrost_state);
+            }
             void setChargingState (std::string charging_state)
             {
                 ChargingStateSensor->publish_state (charging_state);
@@ -351,6 +356,10 @@ namespace esphome
             void set_text_sensor_shift_state (text_sensor::TextSensor *s)
             {
                 ShiftStateSensor = static_cast<text_sensor::TextSensor *>(s);
+            }
+            void set_text_sensor_defrost_state (text_sensor::TextSensor *s)
+            {
+                DefrostStateSensor = static_cast<text_sensor::TextSensor *>(s);
             }
             void set_text_sensor_charging_state (text_sensor::TextSensor *s)
             {
@@ -422,7 +431,16 @@ namespace esphome
                 }
                 return ("Shift state look up error");
             }
-
+            std::string lookup_defrost_state (int defrost_state)
+            {
+                switch (defrost_state)
+                {
+                    case CarServer_ClimateState_DefrostMode_Off_tag:       return ("Off");
+                    case CarServer_ClimateState_DefrostMode_Normal_tag:    return ("Normal");
+                    case CarServer_ClimateState_DefrostMode_Max_tag:       return ("Max");
+                }
+                return ("Shift state look up error");
+            }
             std::string lookup_charging_state (int charging_state)
             {
                 switch (charging_state)
@@ -464,6 +482,7 @@ namespace esphome
             binary_sensor::CustomBinarySensor *isBootOpenSensor;
             binary_sensor::CustomBinarySensor *isFrunkOpenSensor;
             text_sensor::TextSensor *ShiftStateSensor;
+            text_sensor::TextSensor *DefrostStateSensor;
             text_sensor::TextSensor *ChargingStateSensor;
             text_sensor::TextSensor *LastUpdateStateSensor;
             sensor::Sensor *ChargeStateSensor;

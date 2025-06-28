@@ -1392,169 +1392,6 @@ namespace esphome
           action_str);
     }
 
-    // combined function for setting charging parameters
-/*    int TeslaBLEVehicle::sendCarServerVehicleActionMessage(BLE_CarServer_VehicleAction action, int param)
-    {
-      std::string action_str;
-      switch (action)
-      {
-      case GET_CHARGE_STATE:
-        action_str = "getChargeState";
-        break;
-      case GET_CLIMATE_STATE:
-        action_str = "getClimateState";
-        break;
-      case GET_DRIVE_STATE:
-        action_str = "getDriveState";
-        break;
-      case GET_LOCATION_STATE:
-        action_str = "getLocationState";
-        break;
-      case GET_CLOSURES_STATE:
-        action_str = "getClosuresState";
-        break;
-      case SET_CHARGING_SWITCH:
-        action_str = "setChargingSwitch";
-        break;
-      case SET_SENTRY_SWITCH:
-        action_str = "setSentrySwitch";
-        break;
-      case SET_HVAC_SWITCH:
-        action_str = "setHVACSwitch";
-        break;
-      case SET_HVAC_STEERING_HEATER_SWITCH:
-        action_str = "setHVACSteeringHeatSwitch";
-        break;
-      case SET_OPEN_CHARGE_PORT_DOOR:
-        action_str = "setOpenChargePortDoor";
-        break;
-      case SET_CLOSE_CHARGE_PORT_DOOR:
-        action_str = "setCloseChargePortDoor";
-        break;
-      case SET_CHARGING_AMPS:
-        action_str = "setChargingAmps";
-        break;
-      case SET_CHARGING_LIMIT:
-        action_str = "setChargingLimit";
-        break;
-      case FLASH_LIGHT:
-        action_str = "flashLight";
-        break;
-      case SOUND_HORN:
-        action_str = "soundHorn";
-        break;
-      case SET_WINDOWS_SWITCH:
-        action_str = "windowsSwitch";
-        break;
-      default:
-        action_str = "setChargingParameters";
-        break;
-      }
-      ESP_LOGI(TAG, "[%s] Adding command to queue (param=%d)", action_str.c_str(), static_cast<int>(param));
-      command_queue_.emplace(
-          UniversalMessage_Domain_DOMAIN_INFOTAINMENT, [this, action, action_str, param]()
-          {
-        unsigned char message_buffer[UniversalMessage_RoutableMessage_size];
-        size_t message_length = 0;
-        int return_code = 0;
-        ESP_LOGI(TAG, "[%s] Building message..", action_str.c_str());
-        switch (action)
-        {
-        case GET_CHARGE_STATE:
-          return_code = tesla_ble_client_->buildCarServerGetVehicleDataMessage (
-              message_buffer, &message_length, CarServer_GetVehicleData_getChargeState_tag);
-          break;
-        case GET_CLIMATE_STATE:
-           return_code = tesla_ble_client_->buildCarServerGetVehicleDataMessage (
-              message_buffer, &message_length, CarServer_GetVehicleData_getClimateState_tag);
-          break;
-        case GET_DRIVE_STATE:
-          return_code = tesla_ble_client_->buildCarServerGetVehicleDataMessage (
-              message_buffer, &message_length, CarServer_GetVehicleData_getDriveState_tag);
-          break;
-        case GET_LOCATION_STATE:
-          return_code = tesla_ble_client_->buildCarServerGetVehicleDataMessage (
-              message_buffer, &message_length, CarServer_GetVehicleData_getLocationState_tag);
-          break;
-        case GET_CLOSURES_STATE:
-          return_code = tesla_ble_client_->buildCarServerGetVehicleDataMessage (
-              message_buffer, &message_length, CarServer_GetVehicleData_getClosuresState_tag);
-          break;
-        case SET_CHARGING_SWITCH:
-          return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
-              static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_chargingStartStopAction_tag);
-          // If charging has been requested, enable continuous polling
-          if (param == 1)
-          {
-            car_is_charging_ = true;
-          }
-          break;
-        case SET_SENTRY_SWITCH:
-          return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
-              static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_vehicleControlSetSentryModeAction_tag);
-          break;
-        case SET_HVAC_SWITCH:
-          return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
-              static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_hvacAutoAction_tag);
-          break;
-        case SET_HVAC_STEERING_HEATER_SWITCH:
-          return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
-              static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_hvacSteeringWheelHeaterAction_tag);
-          break;
-        case SET_OPEN_CHARGE_PORT_DOOR:
-          return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
-              static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_chargePortDoorOpen_tag);
-          break;
-         case SET_CLOSE_CHARGE_PORT_DOOR:
-          return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
-              static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_chargePortDoorClose_tag);
-          break;
-        case SET_CHARGING_AMPS:
-          return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
-            static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_setChargingAmpsAction_tag);
-          break;
-        case SET_CHARGING_LIMIT:
-          return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
-            static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_chargingSetLimitAction_tag);
-          break;
-        case FLASH_LIGHT:
-          return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
-            static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_vehicleControlFlashLightsAction_tag);
-          break;
-        case SOUND_HORN:
-          return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
-            static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_vehicleControlHonkHornAction_tag);
-          break;
-        case SET_WINDOWS_SWITCH:
-          return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (
-              static_cast<int32_t>(param), message_buffer, &message_length, CarServer_VehicleAction_vehicleControlWindowAction_tag);
-          break;
-        default:
-          ESP_LOGE(TAG, "Invalid action: %d", static_cast<int>(action));
-          return 1;
-        }
-        if (return_code != 0)
-        {
-          ESP_LOGE(TAG, "[%s] Failed to build message", action_str.c_str());
-          auto session = tesla_ble_client_->getPeer(UniversalMessage_Domain_DOMAIN_INFOTAINMENT);
-          if (return_code == TeslaBLE::TeslaBLE_Status_E_ERROR_INVALID_SESSION)
-          {
-            invalidateSession(UniversalMessage_Domain_DOMAIN_INFOTAINMENT);
-          }
-          return return_code;
-        }
-
-        return_code = writeBLE(message_buffer, message_length, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
-        if (return_code != 0)
-        {
-          ESP_LOGE(TAG, "[%s] Failed to send message", action_str.c_str());
-          return return_code;
-        }
-        return 0; },
-          action_str);
-      return 0;
-    }*/
-
     int TeslaBLEVehicle::sendCarServerVehicleActionMessage(BLE_CarServer_VehicleAction action, int param)
     /*
     *   Causes the appropriate message to be built using the ACTION_SPECIFICS table.
@@ -1564,6 +1401,17 @@ namespace esphome
       {
         ESP_LOGE (TAG, "[%s] Action requested %d not that in specifics %d", ACTION_SPECIFICS[action].action_str.c_str(), action, ACTION_SPECIFICS[GET_CHARGE_STATE].localActionDef);
         return 1;
+      }
+      /*
+      *   If this is a VehicleActionMessage message, we want it as near the front of the queue as possible (the first command might be in progress so it
+      *   needs to be just behind that). So in this case, if the queue isn't empty, pop the first member, push it back on (ie at the end), then push this
+      *   command message, and then pop/push all the remaining queue member so we've shuffled everything behind.
+      */
+      if ((ACTION_SPECIFICS[action].whichMsg == VehicleActionMessage) and (command_queue_.size() > 1))
+      { // If the queue's empty or has only one element, no need to reorder. 
+        BLECommand moving_command = command_queue_.front();
+        command_queue_.pop();
+        command_queue_.push (moving_command);
       }
       std::string action_str;
       action_str = ACTION_SPECIFICS[action].action_str;
@@ -1614,6 +1462,19 @@ namespace esphome
         }
         return 0; },
         action_str);
+        
+        // Now move any remaining queue members behind this command (remember, we're only doing this for action messages)
+        if ((ACTION_SPECIFICS[action].whichMsg == VehicleActionMessage) and (command_queue_.size() > 2))
+        { // Iterate over all the remaining members
+          int rest = command_queue_.size() - 2;
+          for (int i = 0; i < rest; i++)
+          {
+            BLECommand moving_command = command_queue_.front();
+            command_queue_.pop();
+            command_queue_.push (moving_command);
+          }
+        }
+
       return 0;
     }
 
@@ -1770,6 +1631,8 @@ namespace esphome
             setClimateState (carserver_response.response_msg.vehicleData.climate_state.optional_is_climate_on.is_climate_on);
             setInsideTemp (carserver_response.response_msg.vehicleData.climate_state.optional_inside_temp_celsius.inside_temp_celsius);
             setOutsideTemp (carserver_response.response_msg.vehicleData.climate_state.optional_outside_temp_celsius.outside_temp_celsius);
+            std::string defrost_state_text = lookup_defrost_state (carserver_response.response_msg.vehicleData.climate_state.defrost_mode.which_type);
+            setDefrostState (defrost_state_text.c_str());
             setLastUpdateState (ctime(&timestamp));
           }
           else if (carserver_response.response_msg.vehicleData.has_closures_state)

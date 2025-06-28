@@ -8,37 +8,43 @@ This project lets you use an ESP32 device to manage charging a Tesla vehicle ove
 
 
 ## Features
-- Controls. Where indicated, these use the current sensor value for the control (but be aware that changing a value/state has a delay before it is reflected in the corresponding sensor - it takes time to send the messages to the vehicle to make the control and then read back the new value - it might look like the control has been rejected as the value reverts to the previous value; be patient!).
-   - Open/close boot
-   - Open/close charge port flap. Uses current sensor value
-   - Turn on/off charger
-   - Set charging amps
-   - Set charging limit (%).  Uses current sensor value
-   - Turn on/off climate. Uses current sensor value
-   - Flash lights
-   - Open frunk
+- Controls. These are iplemented as switches, covers, buttons or numbers. Where indicated, these use the current sensor value for the control (but be aware that changing a value/state has a delay before it is reflected in the corresponding sensor - it takes time to send the messages to the vehicle to make the control and then read back the new value - it might look like the control has been rejected as the value reverts to the previous value; be patient!).
+   - Open/close boot (cover)
+   - Open/close charge port flap. Uses current sensor value (cover)
+   - Turn on/off charger (switch)
+   - Set charging amps (number)
+   - Set charging limit (%).  Uses current sensor value (number)
+   - Turn on/off climate. Uses current sensor value (switch)
+   - Turn on/off defrost. Uses current sensor value (switch)
+   - Flash lights (button)
+   - Open frunk. Open only (cover)
    - Turn on/off sentry mode
-   - Sound horn
-   - Turn on/off steering wheel heater
-   - Vent/close windows
-   - Wake up vehicle
+   - Sound horn (button)
+   - Turn on/off steering wheel heater (switch)
+   - Unlock charge port (button)
+   - Vent/close windows (cover)
+   - Wake up vehicle (button)
 - Vehicle information sensors. There are two categories, those available even when asleep and those only when awake. Always available:
   - Asleep/awake
   - Doors locked/unlocked
   - User present/not present
 - Only when awake:
+  - Boot state open/closed
   - Charge current (Amps)
   - Charging flap open/closed
   - Charge level (%)
   - Charge limit (%)
   - Charge power (kW)
   - Charging state (eg Stopped, Charging)
-  - Climate (On or Off)
+  - Climate on/off
+  - Current limit setting (Amps)
+  - Defrost state on/off
   - Exterior temperature (°C)
+  - Frunk open/closed
   - Interior temperature (°C)
   - Last update (the last time a response was received from the Infotainment system, dows not go "Unknown" once a response has been received)
-  - Odometer (miles, see below for km)
-  - Range (miles, see below for km)
+  - Odometer (miles)
+  - Range (miles)
   - Shift state (eg Invalid, R, N, D)
 - Diagnostics (button actions)
    - Force data update (wakes the car and reads all sensors)
@@ -47,7 +53,7 @@ This project lets you use an ESP32 device to manage charging a Tesla vehicle ove
 
 ## Usage
 
-For an example ESPHome dashboard, see [`tesla-ble-example.yml`](./tesla-ble.example.yml). This includes an example of how to use km instead of miles. There are several key parameters that determine the polling activity as follows:
+For an example ESPHome dashboard, see [`tesla-ble-example.yml`](./tesla-ble.example.yml). There are several key parameters that determine the polling activity as follows:
 
 - **update_interval**: This is the base polling rate. **No other polls can happen faster than this even if you configure them shorter.** The VCSEC system is polled at this rate and does not wake the car. [Default 10s]
 - **post_wake_poll_time**: If the vehicle wakes up, it will be detected and the vehicle polled for data for at least this time [Default 300s]
@@ -59,6 +65,10 @@ For an example ESPHome dashboard, see [`tesla-ble-example.yml`](./tesla-ble.exam
 If the vehicle is unlocked or a person is detected as present in the vehicle, the vehicle will be polled at *update_interval* until it is locked and/or no person is present in the vehicle. This could be useful if you wish to quickly detect a change in the vehicle (for example, I use it to detect when it is put into gear so I can trigger an automation to open my electric gate).
 
 Note that if the other parameters are not multiples of *update_interval*, the timings will be longer than expected. For example, if *update_interval* is set to 30s and *poll_data_period* is set to 75s, then the effective *poll_data_period* will be 90s.
+
+## Miles vs Km
+
+By default the car reports miles, so this integration returns miles. In home assistant you can edit the sensor and select the prefered unit of measurement there.
 
 ### Pre-requisites
 - Python 3.10+
