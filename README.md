@@ -15,6 +15,7 @@ This project lets you use an ESP32 device to manage charging a Tesla vehicle ove
    - Set charging amps (number)
    - Set charging limit (%).  Uses current sensor value (number)
    - Turn on/off climate. Uses current sensor value (switch)
+   - Turn on/off defrost. Uses current sensor value (switch)
    - Flash lights (button)
    - Open frunk. Open only (cover)
    - Turn on/off sentry mode
@@ -22,25 +23,28 @@ This project lets you use an ESP32 device to manage charging a Tesla vehicle ove
    - Turn on/off steering wheel heater (switch)
    - Unlock charge port (button)
    - Vent/close windows (cover)
-   - Defrost car. Uses current sensor value (switch)
    - Wake up vehicle (button)
 - Vehicle information sensors. There are two categories, those available even when asleep and those only when awake. Always available:
   - Asleep/awake
   - Doors locked/unlocked
   - User present/not present
 - Only when awake:
+  - Boot state open/closed
   - Charge current (Amps)
   - Charging flap open/closed
   - Charge level (%)
   - Charge limit (%)
   - Charge power (kW)
   - Charging state (eg Stopped, Charging)
-  - Climate (On or Off)
+  - Climate on/off
+  - Current limit setting (Amps)
+  - Defrost state on/off
   - Exterior temperature (°C)
+  - Frunk open/closed
   - Interior temperature (°C)
   - Last update (the last time a response was received from the Infotainment system, dows not go "Unknown" once a response has been received)
-  - Odometer (miles, see below for km)
-  - Range (miles, see below for km)
+  - Odometer (miles)
+  - Range (miles)
   - Shift state (eg Invalid, R, N, D)
 - Diagnostics (button actions)
    - Force data update (wakes the car and reads all sensors)
