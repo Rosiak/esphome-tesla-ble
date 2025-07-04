@@ -17,6 +17,7 @@ tesla_ble_vehicle:
   poll_asleep_period: 60 # Period to poll for data when asleep (s)
   poll_charging_period: 2 # Period to poll for data when charging (s)
   ble_disconnected_min_time: 300 # Minimum time BLE must be disconnected before sensors are Unknwon (s)
+  fast_poll_if_unlocked: 1 # if != 0, fast polls are enabled when unlocked
 
   is_asleep:
     name: "Asleep"
