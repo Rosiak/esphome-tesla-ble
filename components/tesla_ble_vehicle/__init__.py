@@ -38,6 +38,7 @@ CONF_POLL_DATA_PERIOD = "poll_data_period" # Normal period when polling for data
 CONF_POLL_ASLEEP_PERIOD = "poll_asleep_period" # Period to poll for data when asleep (s)
 CONF_POLL_CHARGING_PERIOD = "poll_charging_period" # Period to poll for data when charging (s)
 CONF_BLE_DISCONNECTED_MIN_TIME= "ble_disconnected_min_time" # Minimum time BLE must be disconnected before sensors are Unknwon (s)
+CONF_FAST_POLL_IF_UNLOCKED = "fast_poll_if_unlocked" # if != 0, fast polls are enabled when unlocked
 
 CONFIG_SCHEMA = (
     cv.Schema(
@@ -50,6 +51,7 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_POLL_ASLEEP_PERIOD): cv.uint16_t,
             cv.Optional(CONF_POLL_CHARGING_PERIOD): cv.uint16_t,
             cv.Optional(CONF_BLE_DISCONNECTED_MIN_TIME): cv.uint16_t,
+            cv.Optional(CONF_FAST_POLL_IF_UNLOCKED): cv.uint16_t,
             cv.Optional(CONF_IS_ASLEEP): binary_sensor.binary_sensor_schema(
                 icon="mdi:sleep"
             ).extend(),
@@ -132,7 +134,8 @@ async def to_code(config):
 
     cg.add(var.set_vin(config[CONF_VIN]))
     cg.add(var.load_polling_parameters(config[CONF_POST_WAKE_POLL_TIME], config[CONF_POLL_DATA_PERIOD],
-           config[CONF_POLL_ASLEEP_PERIOD], config[CONF_POLL_CHARGING_PERIOD], config[CONF_BLE_DISCONNECTED_MIN_TIME]))
+           config[CONF_POLL_ASLEEP_PERIOD], config[CONF_POLL_CHARGING_PERIOD], config[CONF_BLE_DISCONNECTED_MIN_TIME],
+           config[CONF_FAST_POLL_IF_UNLOCKED]))
 
     if CONF_IS_ASLEEP in config:
         conf = config[CONF_IS_ASLEEP]
