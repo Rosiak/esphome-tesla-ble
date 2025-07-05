@@ -61,8 +61,10 @@ For an example ESPHome dashboard, see [`tesla-ble-example.yml`](./tesla-ble.exam
 - **poll_asleep_period**: It is possible that the vehicle starts, stops and restarts charging while always awake. In this case it is likely that the restart is not detected. Therefore the vehicle is ALWAYS polled at this rate even when asleep. If set too short it can prevent the vehicle falling asleep. [Default 60s]
 - **poll_charging_period**: while charging, the car can be polled more frequently if desired using this parameter [Default 10s]
 - **ble_disconnected_min_time**: sensors will only be set to *Unknown* if the BLE connection is disconnected continuously for at least this time (useful if you have a slightly flakey BLE connection to your vehicle). Setting it to zero means sensors will be set to *Unknown* as soon as the BLE connection disconnects. [Default 300s]
+- **fast_poll_if_unlocked**: controls whether fast polls are enabled when unlocked, set to 0 to disable, any value > 0 to enable [Default 1 and so enabled]
 
-If the vehicle is unlocked or a person is detected as present in the vehicle, the vehicle will be polled at *update_interval* until it is locked and/or no person is present in the vehicle. This could be useful if you wish to quickly detect a change in the vehicle (for example, I use it to detect when it is put into gear so I can trigger an automation to open my electric gate).
+
+If the vehicle is unlocked (and fast_poll_if_unlocked > 0) or a person is detected as present in the vehicle, the vehicle will be polled at *update_interval* until it is locked and/or no person is present in the vehicle. This could be useful if you wish to quickly detect a change in the vehicle (for example, I use it to detect when it is put into gear so I can trigger an automation to open my electric gate).
 
 Note that if the other parameters are not multiples of *update_interval*, the timings will be longer than expected. For example, if *update_interval* is set to 30s and *poll_data_period* is set to 75s, then the effective *poll_data_period* will be 90s.
 
