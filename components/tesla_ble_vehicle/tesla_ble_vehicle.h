@@ -189,6 +189,7 @@ namespace esphome
             int ble_disconnected_ = 1; // 0 = connected, 1 = disconnected, 2 = disconnected and Unknowns have been set
             int ble_disconnected_time_;
             int ble_disconnected_min_time_;
+            int fast_poll_if_unlocked_ = 1; // != 0 enables fast polling
             TeslaBLEVehicle();
             void setup() override;
             void loop() override;
@@ -199,7 +200,7 @@ namespace esphome
             void set_vin(const char *vin);
             void load_polling_parameters (const int post_wake_poll_time, const int poll_data_period,
                                           const int poll_asleep_period, const int poll_charging_period,
-                                          const int ble_disconnected_min_time);
+                                          const int ble_disconnected_min_time, const int fast_poll_if_unlocked);
             void process_command_queue();
             void process_response_queue();
             void process_ble_read_queue();

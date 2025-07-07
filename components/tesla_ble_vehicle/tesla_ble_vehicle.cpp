@@ -919,7 +919,7 @@ namespace esphome
                   previous_asleep_state_, car_just_woken_, car_is_charging_, this->isUnlockedSensor->state, this->isUserPresentSensor->state);
         
         //if (car_just_woken_ or OneOffUpdate or car_is_charging_ or this->isUnlockedSensor->state or this->isUserPresentSensor->state)
-        if (one_off_update_ or this->isUnlockedSensor->state or this->isUserPresentSensor->state)
+        if (one_off_update_ or (this->isUnlockedSensor->state and (fast_poll_if_unlocked_ > 0)) or this->isUserPresentSensor->state)
         { // For these fastest poll rate is used
           do_poll_ = true;
         }
@@ -1128,7 +1128,7 @@ namespace esphome
 
     void TeslaBLEVehicle::load_polling_parameters (const int post_wake_poll_time, const int poll_data_period,
                                                    const int poll_asleep_period, const int poll_charging_period,
-                                                   const int ble_disconnected_min_time)
+                                                   const int ble_disconnected_min_time, const int fast_poll_if_unlocked)
     {
       // All timings are in milliseconds
       post_wake_poll_time_ = post_wake_poll_time * 1000;
@@ -1136,6 +1136,7 @@ namespace esphome
       poll_asleep_period_ = poll_asleep_period * 1000;
       poll_charging_period_ = poll_charging_period * 1000;
       ble_disconnected_min_time_ = ble_disconnected_min_time * 1000;
+      fast_poll_if_unlocked_ = fast_poll_if_unlocked;
     }
 
     void TeslaBLEVehicle::regenerateKey()
