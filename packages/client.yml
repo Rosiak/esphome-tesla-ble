@@ -47,8 +47,10 @@ tesla_ble_vehicle:
     filters:
       - multiply: 0.01 # Odometer is in hundredths of a mile (can use this to convert to km)
   charge_current:
+    id: "charge_current"
     name: "Charge current"
   charge_power:
+    id: "charge_power"
     name: "Charge power"
   max_soc:
     id: "max_soc"
@@ -122,6 +124,7 @@ button:
 sensor:
   - platform: ble_client
     type: rssi
+    id: ble_signal
     ble_client_id: ble_tesla_id
     name: "BLE Signal"
     icon: mdi:bluetooth
