@@ -121,6 +121,7 @@ namespace esphome
             WAITING_FOR_INFOTAINMENT_AUTH_RESPONSE,
             WAITING_FOR_WAKE,
             WAITING_FOR_WAKE_RESPONSE,
+            WAITING_FOR_LOCK_RESPONSE,
             READY,
             WAITING_FOR_RESPONSE,
         };
@@ -134,6 +135,7 @@ namespace esphome
             uint32_t started_at = millis();
             uint32_t last_tx_at = 0;
             uint8_t retry_count = 0;
+            int done_times = 0; // Used to count if something has been done and how many times
 
             BLECommand(UniversalMessage_Domain d, std::function<int()> e, std::string n = "")
                 : domain(d), execute(e), execute_name(n), state(BLECommandState::IDLE) {}
@@ -218,6 +220,9 @@ namespace esphome
             int handleVCSECVehicleStatus(VCSEC_VehicleStatus vehicleStatus);
 
             int wakeVehicle(void);
+            int lockVehicle (VCSEC_RKEAction_E lock);
+            void placeAtFrontOfQueue (UniversalMessage_Domain domain, std::function<int()> execute, std::string execute_name);
+    
             int sendVCSECActionMessage(VCSEC_RKEAction_E action);
             int sendVCSECClosureMoveRequestMessage (int moveWhat, VCSEC_ClosureMoveType_E moveType);
             int sendCarServerVehicleActionMessage(BLE_CarServer_VehicleAction action, int param);
@@ -345,6 +350,10 @@ namespace esphome
             {
                 isFrunkOpenSensor->publish_state (frunk_state);
             }
+            void setWindowsState (bool windows_state)
+            {
+                windowsStateSensor->publish_state (windows_state);
+            }
             void setInsideTemp (float temp)
             {
                 insideTempStateSensor->publish_state (temp);
@@ -409,6 +418,10 @@ namespace esphome
             void set_binary_sensor_is_frunk_open (binary_sensor::BinarySensor *s)
             {
                 isFrunkOpenSensor = static_cast<binary_sensor::CustomBinarySensor *>(s);
+            }
+            void set_binary_sensor_windows_state (binary_sensor::BinarySensor *s)
+            {
+                windowsStateSensor = static_cast<binary_sensor::CustomBinarySensor *>(s);
             }
             void set_sensor_internal_temp_state (sensor::Sensor *s)
             {
@@ -482,6 +495,7 @@ namespace esphome
             binary_sensor::CustomBinarySensor *isClimateOnSensor;
             binary_sensor::CustomBinarySensor *isBootOpenSensor;
             binary_sensor::CustomBinarySensor *isFrunkOpenSensor;
+            binary_sensor::CustomBinarySensor *windowsStateSensor;
             text_sensor::TextSensor *ShiftStateSensor;
             text_sensor::TextSensor *DefrostStateSensor;
             text_sensor::TextSensor *ChargingStateSensor;
