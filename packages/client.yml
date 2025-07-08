@@ -24,6 +24,7 @@ tesla_ble_vehicle:
   is_user_present:
     name: "User presence"
   is_unlocked:
+    id: "is_unlocked"
     name: "Doors"
   is_charge_flap_open:
     id: "is_charge_flap_open"
@@ -72,6 +73,9 @@ tesla_ble_vehicle:
     name: "Interior"
   external_temp:
     name: "Exterior"
+  windows_state:
+    id: "windows_state"
+    name: "Windows"
       
 button:
   - platform: template
@@ -107,6 +111,13 @@ button:
       - lambda: id(tesla_ble_vehicle_id)->sendVCSECClosureMoveRequestMessage (VCSEC_ClosureMoveRequest_chargePort_tag, VCSEC_ClosureMoveType_E_CLOSURE_MOVE_TYPE_OPEN);
 
   - platform: template
+    name: Unlatch driver door
+    icon: mdi:car-door
+    on_press:
+      - lambda: id(tesla_ble_vehicle_id)->sendVCSECClosureMoveRequestMessage (VCSEC_ClosureMoveRequest_frontDriverDoor_tag, VCSEC_ClosureMoveType_E_CLOSURE_MOVE_TYPE_OPEN);
+    disabled_by_default: true
+
+  - platform: template
     name: Regenerate key
     icon: mdi:key-change
     on_press:
@@ -136,7 +147,7 @@ switch:
     name: "Charger"
     optimistic: true
     icon: mdi:lightning-bolt
-    restore_mode: RESTORE_DEFAULT_OFF
+#    restore_mode: RESTORE_DEFAULT_OFF
     lambda: |-
       if ((id(charging_state).state == "Charging") or (id(charging_state).state == "Starting") or (id(charging_state).state == "Calibrating")) {
         return true;
@@ -206,17 +217,42 @@ switch:
     name: "BLE Connection"
     entity_category: diagnostic
 
+lock:
+  - platform: template
+    name: "Lock car"
+    optimistic: true
+    icon: mdi:lock
+    lambda: |-
+      if (id(is_unlocked).state) {
+          return LOCK_STATE_UNLOCKED;
+        } else {
+          return LOCK_STATE_LOCKED;
+        }
+    unlock_action:
+      - lambda: |-
+          id(tesla_ble_vehicle_id)->lockVehicle(VCSEC_RKEAction_E_RKE_ACTION_UNLOCK);
+    lock_action:
+      - lambda: |-
+          id(tesla_ble_vehicle_id)->lockVehicle(VCSEC_RKEAction_E_RKE_ACTION_LOCK);
+
 cover:
   - platform: template
     name: "Vent"
-    optimistic: true
-#    device_class: door
+    optimistic: false #### true
     icon: mdi:car-door
-    assumed_state: false # we can't read the state 
-    close_action: # This way round to make the arrows follow the desired window motion
-      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (SET_WINDOWS_SWITCH, 1);
+    device_class: door
+    lambda: |-
+      if (id(windows_state).state) {
+        return COVER_OPEN;
+      } else {
+        return COVER_CLOSED;
+      }
+    close_action: #### This way round to make the arrows follow the desired window motion
+      - lambda: |-
+          id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (SET_WINDOWS_SWITCH, 0);
     open_action:
-      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (SET_WINDOWS_SWITCH, 0);
+      - lambda: |-
+          id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (SET_WINDOWS_SWITCH, 1);
 
   - platform: template
     name: "Charge port"
@@ -257,7 +293,7 @@ cover:
     optimistic: true
     device_class: door
     icon: mdi:car
-    assumed_state: true # we can't read the state 
+#    assumed_state: true # we can't read the state 
     lambda: |-
       if (id(is_frunk_open).state) {
         return COVER_OPEN;
