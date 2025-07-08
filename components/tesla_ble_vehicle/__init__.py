@@ -33,11 +33,12 @@ CONF_LAST_UPDATE = "last_update"
 CONF_IS_CLIMATE_ON = "is_climate_on"
 CONF_INTERNAL_TEMP = "internal_temp"
 CONF_EXTERNAL_TEMP = "external_temp"
+CONF_WINDOWS_STATE = "windows_state"
 CONF_POST_WAKE_POLL_TIME = "post_wake_poll_time" # How long to poll for data after car awakes (s)
 CONF_POLL_DATA_PERIOD = "poll_data_period" # Normal period when polling for data when not asleep (s)
 CONF_POLL_ASLEEP_PERIOD = "poll_asleep_period" # Period to poll for data when asleep (s)
 CONF_POLL_CHARGING_PERIOD = "poll_charging_period" # Period to poll for data when charging (s)
-CONF_BLE_DISCONNECTED_MIN_TIME= "ble_disconnected_min_time" # Minimum time BLE must be disconnected before sensors are Unknwon (s)
+CONF_BLE_DISCONNECTED_MIN_TIME = "ble_disconnected_min_time" # Minimum time BLE must be disconnected before sensors are Unknwon (s)
 CONF_FAST_POLL_IF_UNLOCKED = "fast_poll_if_unlocked" # if != 0, fast polls are enabled when unlocked
 
 CONFIG_SCHEMA = (
@@ -112,6 +113,9 @@ CONFIG_SCHEMA = (
             ).extend(),
             cv.Optional(CONF_IS_CLIMATE_ON): binary_sensor.binary_sensor_schema(
                 icon="mdi:fan"
+            ).extend(),
+            cv.Optional(CONF_WINDOWS_STATE): binary_sensor.binary_sensor_schema(
+                icon="mdi:car-door", device_class=binary_sensor.DEVICE_CLASS_WINDOW
             ).extend(),
             cv.Optional(CONF_INTERNAL_TEMP): sensor.sensor_schema(
                 icon="mdi:thermometer", device_class=sensor.DEVICE_CLASS_TEMPERATURE,
@@ -209,6 +213,10 @@ async def to_code(config):
         conf = config[CONF_IS_CLIMATE_ON]
         bs = await binary_sensor.new_binary_sensor(conf)
         cg.add(var.set_binary_sensor_is_climate_on(bs))
+    if CONF_WINDOWS_STATE in config:
+        conf = config[CONF_WINDOWS_STATE]
+        bs = await binary_sensor.new_binary_sensor(conf)
+        cg.add(var.set_binary_sensor_windows_state(bs))
     if CONF_INTERNAL_TEMP in config:
         conf = config[CONF_INTERNAL_TEMP]
         ss = await sensor.new_sensor(conf)
