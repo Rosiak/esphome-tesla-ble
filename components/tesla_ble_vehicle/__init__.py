@@ -29,6 +29,8 @@ CONF_MAX_SOC = "max_soc"
 CONF_MAX_AMPS = "max_amps"
 CONF_BATTERY_RANGE = "battery_range"
 CONF_CHARGING_STATE = "charging_state"
+CONF_CHARGE_ENERGY_ADDED = "charge_energy_added"
+CONF_CHARGE_DISTANCE_ADDED = "charge_distance_added"
 CONF_LAST_UPDATE = "last_update"
 CONF_IS_CLIMATE_ON = "is_climate_on"
 CONF_INTERNAL_TEMP = "internal_temp"
@@ -84,6 +86,14 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_ODOMETER): sensor.sensor_schema(
                 icon="mdi:counter", device_class=sensor.DEVICE_CLASS_DISTANCE,
                 accuracy_decimals=2, unit_of_measurement="mi"
+            ).extend(),
+            cv.Optional(CONF_CHARGE_DISTANCE_ADDED): sensor.sensor_schema(
+                icon="mdi:map-marker-distance", device_class=sensor.DEVICE_CLASS_DISTANCE,
+                accuracy_decimals=2, unit_of_measurement="mi"
+            ).extend(),
+            cv.Optional(CONF_CHARGE_ENERGY_ADDED): sensor.sensor_schema(
+                icon="mdi:battery-positive", device_class=sensor.DEVICE_CLASS_ENERGY_STORAGE,
+                accuracy_decimals=2, unit_of_measurement="kWh"
             ).extend(),
             cv.Optional(CONF_CHARGE_CURRENT): sensor.sensor_schema(
                 icon="mdi:current-ac", device_class=sensor.DEVICE_CLASS_CURRENT,
@@ -201,6 +211,14 @@ async def to_code(config):
         conf = config[CONF_BATTERY_RANGE]
         ss = await sensor.new_sensor(conf)
         cg.add(var.set_sensor_battery_range_state(ss))
+    if CONF_CHARGE_ENERGY_ADDED in config:
+        conf = config[CONF_CHARGE_ENERGY_ADDED]
+        ss = await sensor.new_sensor(conf)
+        cg.add(var.set_sensor_charge_energy_added_state(ss))
+    if CONF_CHARGE_DISTANCE_ADDED in config:
+        conf = config[CONF_CHARGE_DISTANCE_ADDED]
+        ss = await sensor.new_sensor(conf)
+        cg.add(var.set_sensor_charge_distance_added_state(ss))
     if CONF_CHARGING_STATE in config:
         conf = config[CONF_CHARGING_STATE]
         ts = await text_sensor.new_text_sensor(conf)
