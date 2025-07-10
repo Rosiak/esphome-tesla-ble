@@ -136,6 +136,7 @@ namespace esphome
             uint32_t last_tx_at = 0;
             uint8_t retry_count = 0;
             int done_times = 0; // Used to count if something has been done and how many times
+       //     BLE_CarServer_VehicleAction commandType; // Only used for Infotainment domain to store the detailed request made
 
             BLECommand(UniversalMessage_Domain d, std::function<int()> e, std::string n = "")
                 : domain(d), execute(e), execute_name(n), state(BLECommandState::IDLE) {}
@@ -289,6 +290,8 @@ namespace esphome
                     isClimateOnSensor->set_has_state (state);
                     insideTempStateSensor->publish_state (NAN);
                     outsideTempStateSensor->publish_state (NAN);
+                    ChargeEnergyAddedSensor->publish_state (NAN);
+                    ChargeDistanceAddedSensor->publish_state (NAN);
                     isBootOpenSensor->set_has_state (state);
                     isFrunkOpenSensor->set_has_state (state);
                 }
@@ -362,6 +365,14 @@ namespace esphome
             {
                 outsideTempStateSensor->publish_state (temp);
             }
+            void setChargeEnergyAdded (float energy)
+            {
+                ChargeEnergyAddedSensor->publish_state (energy);
+            }
+            void setChargeMilesAdded (float dist)
+            {
+                ChargeDistanceAddedSensor->publish_state (dist);
+            }
 
             void set_text_sensor_shift_state (text_sensor::TextSensor *s)
             {
@@ -406,6 +417,14 @@ namespace esphome
             void set_sensor_odometer_state (sensor::Sensor *s)
             {
                 OdometerStateSensor = static_cast<sensor::Sensor *>(s);
+            }
+            void set_sensor_charge_energy_added_state (sensor::Sensor *s)
+            {
+                ChargeEnergyAddedSensor = static_cast<sensor::Sensor *>(s);
+            }
+            void set_sensor_charge_distance_added_state (sensor::Sensor *s)
+            {
+                ChargeDistanceAddedSensor = static_cast<sensor::Sensor *>(s);
             }
             void set_binary_sensor_is_climate_on (binary_sensor::BinarySensor *s)
             {
@@ -509,6 +528,8 @@ namespace esphome
             sensor::Sensor *BatteryRangeStateSensor;
             sensor::Sensor *outsideTempStateSensor;
             sensor::Sensor *insideTempStateSensor;
+            sensor::Sensor *ChargeEnergyAddedSensor;
+            sensor::Sensor *ChargeDistanceAddedSensor;
 
             std::vector<unsigned char> ble_read_buffer_;
 
