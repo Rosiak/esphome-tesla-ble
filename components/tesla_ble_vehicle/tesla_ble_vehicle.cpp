@@ -810,7 +810,7 @@ namespace esphome
                 break;
               case CarServer_OperationStatus_E_OPERATIONSTATUS_ERROR:
                 // if charging switch is turned on and reason = "is_charging" it's OK
-                // if charging switch is turned of and reason = "is_not_charging" it's OK
+                // if charging switch is turned off and reason = "is_not_charging" it's OK
                 if (carserver_response.actionStatus.has_result_reason)
                 {
                   switch (carserver_response.actionStatus.result_reason.which_reason)
@@ -1545,9 +1545,9 @@ namespace esphome
                 car_is_charging_ = true;
               }
               break;
-          default:
-            ESP_LOGE(TAG, "Invalid action: %d", static_cast<int>(action));
-            return 1;
+            default:
+              ESP_LOGE(TAG, "Invalid action: %d", static_cast<int>(action));
+              return 1;
           }
           if (return_code != 0)
           {
@@ -1707,6 +1707,8 @@ namespace esphome
             setMaxSoc (carserver_response.response_msg.vehicleData.charge_state.optional_charge_limit_soc.charge_limit_soc);
             setMaxAmps (carserver_response.response_msg.vehicleData.charge_state.optional_charging_amps.charging_amps);
             setBatteryRange (carserver_response.response_msg.vehicleData.charge_state.optional_battery_range.battery_range);
+            setChargeEnergyAdded (carserver_response.response_msg.vehicleData.charge_state.optional_charge_energy_added.charge_energy_added);
+            setChargeMilesAdded (carserver_response.response_msg.vehicleData.charge_state.optional_charge_miles_added_ideal.charge_miles_added_ideal);
             switch (carserver_response.response_msg.vehicleData.charge_state.charging_state.which_type)
             {
               case CarServer_ChargeState_ChargingState_Starting_tag:
