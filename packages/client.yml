@@ -58,7 +58,7 @@ tesla_ble_vehicle:
     name: "Charge energy added"
   charge_distance_added:
     id: "charge_distance_added"
-    name: "Charge distamce added"
+    name: "Charge distance added"
   max_soc:
     id: "max_soc"
     name: "Charge limit"
