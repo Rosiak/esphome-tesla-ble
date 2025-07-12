@@ -113,7 +113,7 @@ namespace esphome
       switch (current_command.state)
       {
       case BLECommandState::IDLE:
-        ESP_LOGI(TAG, "[%s] Preparing command..", current_command.execute_name.c_str());
+        ESP_LOGI(TAG, "[%s] Preparing command.. action value %d", current_command.execute_name.c_str(), current_command.action);
         /*
          * If the car is asleep and the command is an Infotainment data request (identified by a "get" in the execute_name
          * field), then ignore the request as we don't want to risk waking the car.
@@ -408,6 +408,33 @@ namespace esphome
           ESP_LOGW(TAG, "[%s] Timed out while waiting for command response",
                   current_command.execute_name.c_str());
           current_command.state = BLECommandState::READY;
+        }
+        break;
+      case BLECommandState::WAITING_FOR_GET_POST_SET:
+        /*
+        *   Command was issued so want to see if its outcome. Allow a delay for the command to complete before requesting the data
+        */
+        if ((now - current_command.last_tx_at) > RX_TIMEOUT)
+        {
+          ESP_LOGI (TAG, "[%s] Action message waiting before sending get %d", current_command.execute_name.c_str(), ACTION_SPECIFICS[current_command.action].getOnSet);
+          switch (ACTION_SPECIFICS[current_command.action].getOnSet)
+          {
+            case GetChargeState:
+              sendCarServerVehicleActionMessage (GET_CHARGE_STATE, 0);
+              break;
+            case GetClimateState:
+              sendCarServerVehicleActionMessage (GET_CLIMATE_STATE, 0);
+              break;
+            case GetDriveState:
+              sendCarServerVehicleActionMessage (GET_DRIVE_STATE, 0);
+              break;
+            case GetClosureState:
+              sendCarServerVehicleActionMessage (GET_CLOSURES_STATE, 0);
+              break;
+            default:
+              break; // do nothing
+          }
+          command_queue_.pop(); // The command is complete
         }
         break;
       }
@@ -805,7 +832,18 @@ namespace esphome
                 if (current_command.state == BLECommandState::WAITING_FOR_RESPONSE)
                 {
                   ESP_LOGI(TAG, "[%s] Received CarServer OK message, command completed", current_command.execute_name.c_str());
-                  command_queue_.pop();
+                  /*
+                  *   If command was an action message, then set to request an update for its associated data (not immediately
+                  *   in order to give time for the command to complete)
+                  */
+                  if (ACTION_SPECIFICS[current_command.action].whichMsg == VehicleActionMessage)
+                  {
+                    current_command.state = BLECommandState::WAITING_FOR_GET_POST_SET;
+                  }
+                  else
+                  {
+                    command_queue_.pop();
+                  }
                 }
                 break;
               case CarServer_OperationStatus_E_OPERATIONSTATUS_ERROR:
@@ -1354,11 +1392,14 @@ namespace esphome
       return 0;
     }
 
-    void TeslaBLEVehicle::placeAtFrontOfQueue (UniversalMessage_Domain domain, std::function<int()> execute, std::string execute_name)
+    void TeslaBLEVehicle::placeAtFrontOfQueue (UniversalMessage_Domain domain,
+                                               std::function<int()> execute,
+                                               std::string execute_name,
+                                               BLE_CarServer_VehicleAction action)
     {
       if (command_queue_.size() == 0)
       { // Queue is empty, place new command and nothing more to do
-        command_queue_.emplace (domain, execute, execute_name); // This swaps the original first and new command
+        command_queue_.emplace (domain, execute, execute_name, action); // This swaps the original first and new command
         return;
       }
       else
@@ -1367,12 +1408,12 @@ namespace esphome
         command_queue_.pop();
         if (moving_command.state == BLECommandState::IDLE)
         { // If the command at the front hasn't started, it goes behind the new action command
-          command_queue_.emplace (domain, execute, execute_name); // This swaps the original first and new command
+          command_queue_.emplace (domain, execute, execute_name, action); // This swaps the original first and new command
           command_queue_.push (moving_command); // Once the q has been cycled, this will 2nd
         } else
         { // If the command at the front has started, the new command goes behind it
           command_queue_.push (moving_command);
-          command_queue_.emplace (domain, execute, execute_name); // Once the q has been cycled, this will 2nd
+          command_queue_.emplace (domain, execute, execute_name, action); // Once the q has been cycled, this will 2nd
         }
         /*
         *   At this point the back of the queue is either new command last, original front command just in front, or vice versa
@@ -1570,11 +1611,11 @@ namespace esphome
         ESP_LOGI(TAG, "[%s] Adding command to queue (param=%d)", action_str.c_str(), static_cast<int>(param));
       if (ACTION_SPECIFICS[action].whichMsg == VehicleActionMessage)
       {
-        placeAtFrontOfQueue (UniversalMessage_Domain_DOMAIN_INFOTAINMENT, execute_cmd, action_str);
+        placeAtFrontOfQueue (UniversalMessage_Domain_DOMAIN_INFOTAINMENT, execute_cmd, action_str, action);
       }
       else
       { // No priority so put it at the back
-        command_queue_.emplace(UniversalMessage_Domain_DOMAIN_INFOTAINMENT, execute_cmd, action_str);
+        command_queue_.emplace(UniversalMessage_Domain_DOMAIN_INFOTAINMENT, execute_cmd, action_str, action);
       }
       return 0;
     }
