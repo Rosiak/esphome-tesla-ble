@@ -20,7 +20,7 @@
 #include <vcsec.pb.h>
 #include <errors.h>
 
-#include "custom_binary_sensor.h"
+//#include "custom_binary_sensor.h"
 
 namespace TeslaBLE
 {
@@ -255,25 +255,25 @@ namespace esphome
 
             // sensors
             // Sleep state (vehicleSleepStatus)
-            void set_binary_sensor_is_asleep(binary_sensor::BinarySensor *s) { isAsleepSensor = static_cast<binary_sensor::CustomBinarySensor *>(s); }
+            void set_binary_sensor_is_asleep(binary_sensor::BinarySensor *s) { isAsleepSensor = static_cast<binary_sensor::BinarySensor *>(s); }
             void updateIsAsleep(bool asleep)
             {
                 isAsleepSensor->publish_state(asleep);
             }
             // Door lock (vehicleLockState)
-            void set_binary_sensor_is_unlocked(binary_sensor::BinarySensor *s) { isUnlockedSensor = static_cast<binary_sensor::CustomBinarySensor *>(s); }
+            void set_binary_sensor_is_unlocked(binary_sensor::BinarySensor *s) { isUnlockedSensor = static_cast<binary_sensor::BinarySensor *>(s); }
             void updateisUnlocked(bool locked)
             {
                 isUnlockedSensor->publish_state(locked);
             }
             // User presence (userPresence)
-            void set_binary_sensor_is_user_present(binary_sensor::BinarySensor *s) { isUserPresentSensor = static_cast<binary_sensor::CustomBinarySensor *>(s); }
+            void set_binary_sensor_is_user_present(binary_sensor::BinarySensor *s) { isUserPresentSensor = static_cast<binary_sensor::BinarySensor *>(s); }
             void updateIsUserPresent(bool present)
             {
                 isUserPresentSensor->publish_state(present);
             }
             // Charge flap (chargeFlapStatus)
-            void set_binary_sensor_is_charge_flap_open(binary_sensor::BinarySensor *s) { isChargeFlapOpenSensor = static_cast<binary_sensor::CustomBinarySensor *>(s); }
+            void set_binary_sensor_is_charge_flap_open(binary_sensor::BinarySensor *s) { isChargeFlapOpenSensor = static_cast<binary_sensor::BinarySensor *>(s); }
             void updateIsChargeFlapOpen(bool open)
             {
                 isChargeFlapOpenSensor->publish_state(open);
@@ -446,19 +446,19 @@ namespace esphome
             }
             void set_binary_sensor_is_climate_on (binary_sensor::BinarySensor *s)
             {
-                isClimateOnSensor = static_cast<binary_sensor::CustomBinarySensor *>(s);
+                isClimateOnSensor = static_cast<binary_sensor::BinarySensor *>(s);
             }
             void set_binary_sensor_is_boot_open (binary_sensor::BinarySensor *s)
             {
-                isBootOpenSensor = static_cast<binary_sensor::CustomBinarySensor *>(s);
+                isBootOpenSensor = static_cast<binary_sensor::BinarySensor *>(s);
             }
             void set_binary_sensor_is_frunk_open (binary_sensor::BinarySensor *s)
             {
-                isFrunkOpenSensor = static_cast<binary_sensor::CustomBinarySensor *>(s);
+                isFrunkOpenSensor = static_cast<binary_sensor::BinarySensor *>(s);
             }
             void set_binary_sensor_windows_state (binary_sensor::BinarySensor *s)
             {
-                windowsStateSensor = static_cast<binary_sensor::CustomBinarySensor *>(s);
+                windowsStateSensor = static_cast<binary_sensor::BinarySensor *>(s);
             }
             void set_sensor_internal_temp_state (sensor::Sensor *s)
             {
@@ -525,14 +525,14 @@ namespace esphome
             espbt::ESPBTUUID write_uuid_;
 
             // sensors
-            binary_sensor::CustomBinarySensor *isAsleepSensor;
-            binary_sensor::CustomBinarySensor *isUnlockedSensor;
-            binary_sensor::CustomBinarySensor *isUserPresentSensor;
-            binary_sensor::CustomBinarySensor *isChargeFlapOpenSensor;
-            binary_sensor::CustomBinarySensor *isClimateOnSensor;
-            binary_sensor::CustomBinarySensor *isBootOpenSensor;
-            binary_sensor::CustomBinarySensor *isFrunkOpenSensor;
-            binary_sensor::CustomBinarySensor *windowsStateSensor;
+            binary_sensor::BinarySensor *isAsleepSensor;
+            binary_sensor::BinarySensor *isUnlockedSensor;
+            binary_sensor::BinarySensor *isUserPresentSensor;
+            binary_sensor::BinarySensor *isChargeFlapOpenSensor;
+            binary_sensor::BinarySensor *isClimateOnSensor;
+            binary_sensor::BinarySensor *isBootOpenSensor;
+            binary_sensor::BinarySensor *isFrunkOpenSensor;
+            binary_sensor::BinarySensor *windowsStateSensor;
             text_sensor::TextSensor *ShiftStateSensor;
             text_sensor::TextSensor *DefrostStateSensor;
             text_sensor::TextSensor *ChargingStateSensor;
