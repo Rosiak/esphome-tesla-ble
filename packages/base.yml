@@ -4,7 +4,7 @@ substitutions:
 esphome:
   project:
     name: PedroKTFC.esphome-tesla-ble
-    version: "2025.1.1"
+    version: "2025.1.2.dev"
 
 logger:
   level: INFO

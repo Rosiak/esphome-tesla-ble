@@ -20,7 +20,7 @@
 #include <vcsec.pb.h>
 #include <errors.h>
 
-#include "custom_binary_sensor.h"
+//#include "custom_binary_sensor.h"
 
 namespace TeslaBLE
 {
@@ -29,6 +29,7 @@ namespace TeslaBLE
 
 typedef enum BLE_CarServer_VehicleAction_E
 {
+    DO_NOTHING, // Blank empty entry
     GET_CHARGE_STATE,
     GET_CLIMATE_STATE,
     GET_DRIVE_STATE,
@@ -51,20 +52,36 @@ typedef enum BLE_CarServer_VehicleAction_E
 typedef enum // The type of messages to send
 {
     VehicleActionMessage,
-    GetVehicleDataMessage
+    GetVehicleDataMessage,
+    Empty
 } AllowedMsg;
 
+typedef enum 
+/*
+*   The type of get to do immediately following a set (having this means a new set doesn't need a code change if it uses an existing
+*   getxxxstate call.
+*/
+{
+    GetChargeState,
+    GetClimateState,
+    GetDriveState,
+    GetLocationState,
+    GetClosureState,
+    Invalid // Eg a data read, sensor not yet implemented, etc
+} GetOnSet;
+
+struct ActionMessageDetail
 /*
 *   This defines the contents of the rows of the ACTION_SPECIFICS table below. For every localActionDef, this describes the specific
 *   contents for the message to send to the car. The rows of the table must be in the same order as BLE_CarServer_VehicleAction.
 *   If a new message is needed, simply add a row to the table with the appropriate contents, no need to edit the code in the .cpp.
 */
-struct ActionMessageDetail
 {
     BLE_CarServer_VehicleAction_E localActionDef;
     std::string action_str;
     AllowedMsg whichMsg;
     int actionTag;
+    GetOnSet getOnSet;
 };
 
 namespace esphome
@@ -76,23 +93,24 @@ namespace esphome
 
         static const struct ActionMessageDetail ACTION_SPECIFICS[] =
         {
-            {GET_CHARGE_STATE,                 "getChargeState",            GetVehicleDataMessage, CarServer_GetVehicleData_getChargeState_tag},
-            {GET_CLIMATE_STATE,                "getClimateState",           GetVehicleDataMessage, CarServer_GetVehicleData_getClimateState_tag},
-            {GET_DRIVE_STATE,                  "getDriveState",             GetVehicleDataMessage, CarServer_GetVehicleData_getDriveState_tag},
-            {GET_LOCATION_STATE,               "getLocationState",          GetVehicleDataMessage, CarServer_GetVehicleData_getLocationState_tag},
-            {GET_CLOSURES_STATE,               "getClosuresState",          GetVehicleDataMessage, CarServer_GetVehicleData_getClosuresState_tag},
-            {SET_CHARGING_SWITCH,              "setChargingSwitch",         VehicleActionMessage,  CarServer_VehicleAction_chargingStartStopAction_tag},
-            {SET_CHARGING_AMPS,                "setChargingAmps",           VehicleActionMessage,  CarServer_VehicleAction_setChargingAmpsAction_tag},
-            {SET_CHARGING_LIMIT,               "setChargingLimit",          VehicleActionMessage,  CarServer_VehicleAction_chargingSetLimitAction_tag},
-            {SET_SENTRY_SWITCH,                "setSentrySwitch",           VehicleActionMessage,  CarServer_VehicleAction_vehicleControlSetSentryModeAction_tag},
-            {SET_HVAC_SWITCH,                  "setHVACSwitch",             VehicleActionMessage,  CarServer_VehicleAction_hvacAutoAction_tag},
-            {SET_HVAC_STEERING_HEATER_SWITCH,  "setHVACSteeringHeatSwitch", VehicleActionMessage,  CarServer_VehicleAction_hvacSteeringWheelHeaterAction_tag},
-            {SET_OPEN_CHARGE_PORT_DOOR,        "setOpenChargePortDoor",     VehicleActionMessage,  CarServer_VehicleAction_chargePortDoorOpen_tag},
-            {SET_CLOSE_CHARGE_PORT_DOOR,       "setCloseChargePortDoor",    VehicleActionMessage,  CarServer_VehicleAction_chargePortDoorClose_tag},
-            {SOUND_HORN,                       "soundHorn",                 VehicleActionMessage,  CarServer_VehicleAction_vehicleControlHonkHornAction_tag},
-            {FLASH_LIGHT,                      "flashLight",                VehicleActionMessage,  CarServer_VehicleAction_vehicleControlFlashLightsAction_tag},
-            {SET_WINDOWS_SWITCH,               "setWindowsSwitch",          VehicleActionMessage,  CarServer_VehicleAction_vehicleControlWindowAction_tag},
-            {DEFROST_CAR,                      "defrostCar",                VehicleActionMessage,  CarServer_VehicleAction_hvacSetPreconditioningMaxAction_tag}
+            {DO_NOTHING,                       "",                          Empty,                 0,                                                              Invalid},
+            {GET_CHARGE_STATE,                 "getChargeState",            GetVehicleDataMessage, CarServer_GetVehicleData_getChargeState_tag,                    Invalid},
+            {GET_CLIMATE_STATE,                "getClimateState",           GetVehicleDataMessage, CarServer_GetVehicleData_getClimateState_tag,                   Invalid},
+            {GET_DRIVE_STATE,                  "getDriveState",             GetVehicleDataMessage, CarServer_GetVehicleData_getDriveState_tag,                     Invalid},
+            {GET_LOCATION_STATE,               "getLocationState",          GetVehicleDataMessage, CarServer_GetVehicleData_getLocationState_tag,                  Invalid},
+            {GET_CLOSURES_STATE,               "getClosuresState",          GetVehicleDataMessage, CarServer_GetVehicleData_getClosuresState_tag,                  Invalid},
+            {SET_CHARGING_SWITCH,              "setChargingSwitch",         VehicleActionMessage,  CarServer_VehicleAction_chargingStartStopAction_tag,            GetChargeState},
+            {SET_CHARGING_AMPS,                "setChargingAmps",           VehicleActionMessage,  CarServer_VehicleAction_setChargingAmpsAction_tag,              GetChargeState},
+            {SET_CHARGING_LIMIT,               "setChargingLimit",          VehicleActionMessage,  CarServer_VehicleAction_chargingSetLimitAction_tag,             GetChargeState},
+            {SET_SENTRY_SWITCH,                "setSentrySwitch",           VehicleActionMessage,  CarServer_VehicleAction_vehicleControlSetSentryModeAction_tag,  Invalid},
+            {SET_HVAC_SWITCH,                  "setHVACSwitch",             VehicleActionMessage,  CarServer_VehicleAction_hvacAutoAction_tag,                     GetClimateState},
+            {SET_HVAC_STEERING_HEATER_SWITCH,  "setHVACSteeringHeatSwitch", VehicleActionMessage,  CarServer_VehicleAction_hvacSteeringWheelHeaterAction_tag,      Invalid},
+            {SET_OPEN_CHARGE_PORT_DOOR,        "setOpenChargePortDoor",     VehicleActionMessage,  CarServer_VehicleAction_chargePortDoorOpen_tag,                 Invalid},
+            {SET_CLOSE_CHARGE_PORT_DOOR,       "setCloseChargePortDoor",    VehicleActionMessage,  CarServer_VehicleAction_chargePortDoorClose_tag,                Invalid},
+            {SOUND_HORN,                       "soundHorn",                 VehicleActionMessage,  CarServer_VehicleAction_vehicleControlHonkHornAction_tag,       Invalid},
+            {FLASH_LIGHT,                      "flashLight",                VehicleActionMessage,  CarServer_VehicleAction_vehicleControlFlashLightsAction_tag,    Invalid},
+            {SET_WINDOWS_SWITCH,               "setWindowsSwitch",          VehicleActionMessage,  CarServer_VehicleAction_vehicleControlWindowAction_tag,         GetClosureState},
+            {DEFROST_CAR,                      "defrostCar",                VehicleActionMessage,  CarServer_VehicleAction_hvacSetPreconditioningMaxAction_tag,    GetClimateState}
         };
 
         static const char *const TAG = "tesla_ble_vehicle";
@@ -121,8 +139,10 @@ namespace esphome
             WAITING_FOR_INFOTAINMENT_AUTH_RESPONSE,
             WAITING_FOR_WAKE,
             WAITING_FOR_WAKE_RESPONSE,
+            WAITING_FOR_LOCK_RESPONSE,
             READY,
             WAITING_FOR_RESPONSE,
+            WAITING_FOR_GET_POST_SET
         };
 
         struct BLECommand
@@ -130,13 +150,15 @@ namespace esphome
             UniversalMessage_Domain domain;
             std::function<int()> execute;
             std::string execute_name;
+            BLE_CarServer_VehicleAction action; // Only used for Infotainment domain to store the detailed request made
             BLECommandState state;
             uint32_t started_at = millis();
             uint32_t last_tx_at = 0;
             uint8_t retry_count = 0;
+            int done_times = 0; // Used to count if something has been done and how many times
 
-            BLECommand(UniversalMessage_Domain d, std::function<int()> e, std::string n = "")
-                : domain(d), execute(e), execute_name(n), state(BLECommandState::IDLE) {}
+            BLECommand(UniversalMessage_Domain d, std::function<int()> e, std::string n = "", BLE_CarServer_VehicleAction a = DO_NOTHING)
+                : domain(d), execute(e), execute_name(n), action(a), state(BLECommandState::IDLE) {}
         };
 
         struct BLETXChunk
@@ -218,6 +240,9 @@ namespace esphome
             int handleVCSECVehicleStatus(VCSEC_VehicleStatus vehicleStatus);
 
             int wakeVehicle(void);
+            int lockVehicle (VCSEC_RKEAction_E lock);
+            void placeAtFrontOfQueue (UniversalMessage_Domain domain, std::function<int()> execute, std::string execute_name, BLE_CarServer_VehicleAction action = DO_NOTHING);
+    
             int sendVCSECActionMessage(VCSEC_RKEAction_E action);
             int sendVCSECClosureMoveRequestMessage (int moveWhat, VCSEC_ClosureMoveType_E moveType);
             int sendCarServerVehicleActionMessage(BLE_CarServer_VehicleAction action, int param);
@@ -230,41 +255,40 @@ namespace esphome
 
             // sensors
             // Sleep state (vehicleSleepStatus)
-            void set_binary_sensor_is_asleep(binary_sensor::BinarySensor *s) { isAsleepSensor = static_cast<binary_sensor::CustomBinarySensor *>(s); }
+            void set_binary_sensor_is_asleep(binary_sensor::BinarySensor *s) { isAsleepSensor = static_cast<binary_sensor::BinarySensor *>(s); }
             void updateIsAsleep(bool asleep)
             {
                 isAsleepSensor->publish_state(asleep);
             }
             // Door lock (vehicleLockState)
-            void set_binary_sensor_is_unlocked(binary_sensor::BinarySensor *s) { isUnlockedSensor = static_cast<binary_sensor::CustomBinarySensor *>(s); }
+            void set_binary_sensor_is_unlocked(binary_sensor::BinarySensor *s) { isUnlockedSensor = static_cast<binary_sensor::BinarySensor *>(s); }
             void updateisUnlocked(bool locked)
             {
                 isUnlockedSensor->publish_state(locked);
             }
             // User presence (userPresence)
-            void set_binary_sensor_is_user_present(binary_sensor::BinarySensor *s) { isUserPresentSensor = static_cast<binary_sensor::CustomBinarySensor *>(s); }
+            void set_binary_sensor_is_user_present(binary_sensor::BinarySensor *s) { isUserPresentSensor = static_cast<binary_sensor::BinarySensor *>(s); }
             void updateIsUserPresent(bool present)
             {
                 isUserPresentSensor->publish_state(present);
             }
             // Charge flap (chargeFlapStatus)
-            void set_binary_sensor_is_charge_flap_open(binary_sensor::BinarySensor *s) { isChargeFlapOpenSensor = static_cast<binary_sensor::CustomBinarySensor *>(s); }
+            void set_binary_sensor_is_charge_flap_open(binary_sensor::BinarySensor *s) { isChargeFlapOpenSensor = static_cast<binary_sensor::BinarySensor *>(s); }
             void updateIsChargeFlapOpen(bool open)
             {
                 isChargeFlapOpenSensor->publish_state(open);
             }
             void setChargeFlapHasState(bool has_state)
             {
-                isChargeFlapOpenSensor->set_has_state(has_state);
+                isChargeFlapOpenSensor->publish_state (has_state);
             }
 
             // set sensors to unknown (e.g. when vehicle is disconnected)
             void setSensors(bool has_state)
             {
-                // Binary sensors (0 or 1) need a "fiddle" to get unknown
-                isAsleepSensor->set_has_state(has_state);
-                isUnlockedSensor->set_has_state(has_state);
-                isUserPresentSensor->set_has_state(has_state);
+                isAsleepSensor->publish_state (has_state);
+                isUnlockedSensor->publish_state (has_state);
+                isUserPresentSensor->publish_state (has_state);
             }
 
             void setInfotainmentSensors (bool state)
@@ -281,11 +305,13 @@ namespace esphome
                     DefrostStateSensor->publish_state ("Unknown");
                     ChargingStateSensor->publish_state ("Unknown");
                     BatteryRangeStateSensor->publish_state (NAN);
-                    isClimateOnSensor->set_has_state (state);
+                    isClimateOnSensor->publish_state (state);
                     insideTempStateSensor->publish_state (NAN);
                     outsideTempStateSensor->publish_state (NAN);
-                    isBootOpenSensor->set_has_state (state);
-                    isFrunkOpenSensor->set_has_state (state);
+                    ChargeEnergyAddedSensor->publish_state (NAN);
+                    ChargeDistanceAddedSensor->publish_state (NAN);
+                    isBootOpenSensor->publish_state (state);
+                    isFrunkOpenSensor->publish_state (state);
                 }
 
             }
@@ -345,6 +371,10 @@ namespace esphome
             {
                 isFrunkOpenSensor->publish_state (frunk_state);
             }
+            void setWindowsState (bool windows_state)
+            {
+                windowsStateSensor->publish_state (windows_state);
+            }
             void setInsideTemp (float temp)
             {
                 insideTempStateSensor->publish_state (temp);
@@ -352,6 +382,14 @@ namespace esphome
             void setOutsideTemp (float temp)
             {
                 outsideTempStateSensor->publish_state (temp);
+            }
+            void setChargeEnergyAdded (float energy)
+            {
+                ChargeEnergyAddedSensor->publish_state (energy);
+            }
+            void setChargeMilesAdded (float dist)
+            {
+                ChargeDistanceAddedSensor->publish_state (dist);
             }
 
             void set_text_sensor_shift_state (text_sensor::TextSensor *s)
@@ -398,17 +436,29 @@ namespace esphome
             {
                 OdometerStateSensor = static_cast<sensor::Sensor *>(s);
             }
+            void set_sensor_charge_energy_added_state (sensor::Sensor *s)
+            {
+                ChargeEnergyAddedSensor = static_cast<sensor::Sensor *>(s);
+            }
+            void set_sensor_charge_distance_added_state (sensor::Sensor *s)
+            {
+                ChargeDistanceAddedSensor = static_cast<sensor::Sensor *>(s);
+            }
             void set_binary_sensor_is_climate_on (binary_sensor::BinarySensor *s)
             {
-                isClimateOnSensor = static_cast<binary_sensor::CustomBinarySensor *>(s);
+                isClimateOnSensor = static_cast<binary_sensor::BinarySensor *>(s);
             }
             void set_binary_sensor_is_boot_open (binary_sensor::BinarySensor *s)
             {
-                isBootOpenSensor = static_cast<binary_sensor::CustomBinarySensor *>(s);
+                isBootOpenSensor = static_cast<binary_sensor::BinarySensor *>(s);
             }
             void set_binary_sensor_is_frunk_open (binary_sensor::BinarySensor *s)
             {
-                isFrunkOpenSensor = static_cast<binary_sensor::CustomBinarySensor *>(s);
+                isFrunkOpenSensor = static_cast<binary_sensor::BinarySensor *>(s);
+            }
+            void set_binary_sensor_windows_state (binary_sensor::BinarySensor *s)
+            {
+                windowsStateSensor = static_cast<binary_sensor::BinarySensor *>(s);
             }
             void set_sensor_internal_temp_state (sensor::Sensor *s)
             {
@@ -475,13 +525,14 @@ namespace esphome
             espbt::ESPBTUUID write_uuid_;
 
             // sensors
-            binary_sensor::CustomBinarySensor *isAsleepSensor;
-            binary_sensor::CustomBinarySensor *isUnlockedSensor;
-            binary_sensor::CustomBinarySensor *isUserPresentSensor;
-            binary_sensor::CustomBinarySensor *isChargeFlapOpenSensor;
-            binary_sensor::CustomBinarySensor *isClimateOnSensor;
-            binary_sensor::CustomBinarySensor *isBootOpenSensor;
-            binary_sensor::CustomBinarySensor *isFrunkOpenSensor;
+            binary_sensor::BinarySensor *isAsleepSensor;
+            binary_sensor::BinarySensor *isUnlockedSensor;
+            binary_sensor::BinarySensor *isUserPresentSensor;
+            binary_sensor::BinarySensor *isChargeFlapOpenSensor;
+            binary_sensor::BinarySensor *isClimateOnSensor;
+            binary_sensor::BinarySensor *isBootOpenSensor;
+            binary_sensor::BinarySensor *isFrunkOpenSensor;
+            binary_sensor::BinarySensor *windowsStateSensor;
             text_sensor::TextSensor *ShiftStateSensor;
             text_sensor::TextSensor *DefrostStateSensor;
             text_sensor::TextSensor *ChargingStateSensor;
@@ -495,6 +546,8 @@ namespace esphome
             sensor::Sensor *BatteryRangeStateSensor;
             sensor::Sensor *outsideTempStateSensor;
             sensor::Sensor *insideTempStateSensor;
+            sensor::Sensor *ChargeEnergyAddedSensor;
+            sensor::Sensor *ChargeDistanceAddedSensor;
 
             std::vector<unsigned char> ble_read_buffer_;
 
