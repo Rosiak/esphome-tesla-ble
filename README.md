@@ -53,6 +53,7 @@ This project lets you use an ESP32 device to manage charging a Tesla vehicle ove
 
 ## Hardware needed
 - [M5Stack Atom S3](https://docs.m5stack.com/en/core/AtomS3)
+- Alternatively, [M5Stack Atom S3-Lite](https://docs.m5stack.com/en/core/AtomS3%20Lite)
 - Alternatively, [M5Stack Nano C6](https://docs.m5stack.com/en/core/M5NanoC6)
 - USB-C cable to flash conveniently the M5Stack of your choise
 
