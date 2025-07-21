@@ -51,6 +51,11 @@ This project lets you use an ESP32 device to manage charging a Tesla vehicle ove
    - Pair BLE key with vehicle
    - Restart ESP board
 
+## Hardware needed
+- [M5Stack Atom S3](https://docs.m5stack.com/en/core/AtomS3)
+- Alternatively, [M5Stack Nano C6](https://docs.m5stack.com/en/core/M5NanoC6)
+- USB-C cable to flash conveniently the M5Stack of your choise
+
 ## Usage
 
 For an example ESPHome dashboard, see [`tesla-ble-example.yml`](./tesla-ble.example.yml). There are several key parameters that determine the polling activity as follows:
@@ -75,6 +80,7 @@ By default the car reports miles, so this integration returns miles. In home ass
 ### Pre-requisites
 - Python 3.10+
 - GNU Make
+- Alternatively, Home Assistant [Add-On Esphome Device Builder](https://esphome.io/guides/getting_started_hassio#installing-esphome-device-builder)
 
 ### Finding the BLE MAC address of your vehicle
 
