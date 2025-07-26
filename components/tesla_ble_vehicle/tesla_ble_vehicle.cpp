@@ -1892,7 +1892,7 @@ namespace esphome
         {
           ESP_LOGI(TAG, "Connected successfully!");
           this->status_clear_warning();
-          this->setSensors(true);
+          //this->setSensors(true); // Stting these true on connection suggests they've been read, they haven't!
           ble_disconnected_ = 0;
 
           // generate random connection id 16 bytes
