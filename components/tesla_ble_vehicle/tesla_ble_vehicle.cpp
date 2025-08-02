@@ -817,7 +817,7 @@ namespace esphome
             ESP_LOGE(TAG, "Failed to parse incoming message");
             return;
           }
-          ESP_LOGD(TAG, "Parsed CarServer.Response");
+          ESP_LOGW(TAG, "Parsed CarServer.Response, fault code was %s", message_fault_to_string(fault));
           //log_routable_message(TAG, &message);
           log_carserver_response(TAG, &carserver_response);
           if (carserver_response.has_actionStatus && !command_queue_.empty())
@@ -1892,7 +1892,7 @@ namespace esphome
         {
           ESP_LOGI(TAG, "Connected successfully!");
           this->status_clear_warning();
-          //this->setSensors(true); // Stting these true on connection suggests they've been read, they haven't!
+//          this->setSensors(true);  // Setting these true on connection suggests they've been read, they haven't!
           ble_disconnected_ = 0;
 
           // generate random connection id 16 bytes
