@@ -280,18 +280,25 @@ namespace esphome
             }
             void setChargeFlapHasState(bool has_state)
             {
-                isChargeFlapOpenSensor->publish_state (has_state);
+                if (has_state)
+                {
+                    isChargeFlapOpenSensor->publish_state (has_state);
+                }
+                else
+                {
+                    isChargeFlapOpenSensor->invalidate_state ();
+                }
             }
 
             // set sensors to unknown (e.g. when vehicle is disconnected)
-            void setSensors(bool has_state)
+            void setSensors(bool has_state) // has_state is an anachronism
             {
-                isAsleepSensor->publish_state (has_state);
-                isUnlockedSensor->publish_state (has_state);
-                isUserPresentSensor->publish_state (has_state);
+                isAsleepSensor->invalidate_state ();
+                isUnlockedSensor->invalidate_state ();
+                isUserPresentSensor->invalidate_state ();
             }
 
-            void setInfotainmentSensors (bool state)
+            void setInfotainmentSensors (bool state) // state is an anachronism
             {
                 if (!state)
                 {
@@ -305,13 +312,14 @@ namespace esphome
                     DefrostStateSensor->publish_state ("Unknown");
                     ChargingStateSensor->publish_state ("Unknown");
                     BatteryRangeStateSensor->publish_state (NAN);
-                    isClimateOnSensor->publish_state (state);
+                    isClimateOnSensor->invalidate_state ();
                     insideTempStateSensor->publish_state (NAN);
                     outsideTempStateSensor->publish_state (NAN);
                     ChargeEnergyAddedSensor->publish_state (NAN);
                     ChargeDistanceAddedSensor->publish_state (NAN);
-                    isBootOpenSensor->publish_state (state);
-                    isFrunkOpenSensor->publish_state (state);
+                    isBootOpenSensor->invalidate_state ();
+                    isFrunkOpenSensor->invalidate_state ();
+                    windowsStateSensor->invalidate_state ();
                 }
 
             }
