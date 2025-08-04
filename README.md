@@ -92,7 +92,7 @@ By default the car reports miles, so this integration returns miles. In home ass
 
 I recopmmend two methods:
 1. Use an appropriate BLE app on your phone (eg BLE Scanner) to scan for the BLE devices nearby (so be close to your car). You should see your car in the list of devices (its name will begin with an 'S') with the MAC address displayed.
-1. Build the scanner in the ble-scanner.yml file. Once built, it will start scanning and print out the MAC address of any Tesla vehicles found in the logs. Building does take some time.
+1. Build the scanner in the [`ble-scanner.yml`](./ble-scanner.yml) file. Once built, it will start scanning and print out the MAC address of any Tesla vehicles found in the logs. Building does take some time.
 
 The following is the original method. I have never tried this and I do not maintain the associated file. I therefore do not recommend this but have left it here in case there are any people left who still use it.
 1. Copy and rename `secrets.yaml.example` to `secrets.yaml` and update it with your WiFi credentials (`wifi_ssid` and `wifi_password`) and vehicle VIN (`tesla_vin`).
@@ -165,3 +165,4 @@ The following are instructions if you use make. I have never used these so canno
 1. To verify the key was added, tap Controls > Locks, and you should see a new key named "Unknown device" in the list
 1. [optional] Rename your key to "ESPHome BLE" to make it easier to identify
     <img src="./docs/vehicle-locks.png" width="500">
+
