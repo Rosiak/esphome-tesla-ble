@@ -817,8 +817,11 @@ namespace esphome
             ESP_LOGE(TAG, "Failed to parse incoming message");
             return;
           }
-          ESP_LOGW(TAG, "Parsed CarServer.Response, fault code was %s", message_fault_to_string(fault));
-          //log_routable_message(TAG, &message);
+          if (fault != UniversalMessage_MessageFault_E_MESSAGEFAULT_ERROR_NONE)
+          {
+            ESP_LOGW (TAG, "Parsed CarServer.Response but fault code was %s", message_fault_to_string(fault));
+          }
+            //log_routable_message(TAG, &message);
           log_carserver_response(TAG, &carserver_response);
           if (carserver_response.has_actionStatus && !command_queue_.empty())
           {
