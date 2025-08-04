@@ -1,6 +1,6 @@
 # ESPHome Tesla BLE
 
-This project https://github.com/PedroKTFC/esphome-tesla-ble lets you use an ESP32 device to manage charging a Tesla vehicle over BLE. It is a fork of the [yoziru/esphome-tesla-ble](http://github.com/yoziru/esphome-tesla-ble) and uses a similar fork of the [yoziru/tesla-ble](http://github.com/yoziru/tesla-ble) library.
+This project [PedroKTFC/esphome-tesla-ble](https://github.com/PedroKTFC/esphome-tesla-ble) lets you use an ESP32 device to manage charging a Tesla vehicle over BLE. It is a fork of the [yoziru/esphome-tesla-ble](http://github.com/yoziru/esphome-tesla-ble) and uses a similar fork of the [yoziru/tesla-ble](http://github.com/yoziru/tesla-ble) library.
 
 | Controls | Sensors | Diagnostic |
 | - | - | - |
@@ -143,4 +143,5 @@ By default the car reports miles, so this integration returns miles. In home ass
 1. To verify the key was added, tap Controls > Locks, and you should see a new key named "Unknown device" in the list
 1. [optional] Rename your key to "ESPHome BLE" to make it easier to identify
     <img src="./docs/vehicle-locks.png" width="500">
+
 
