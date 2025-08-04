@@ -21,6 +21,7 @@ This project [PedroKTFC/esphome-tesla-ble](https://github.com/PedroKTFC/esphome-
    - Turn on/off sentry mode
    - Sound horn (button)
    - Turn on/off steering wheel heater (switch)
+   - Unlatch driver door (button). This is disabled by default as it cannot be undone (eg if you're on holiday and, say your car is on your drive, if you accidentally action this button your driver door will unlatch and you can only reclose it physically!) 
    - Unlock charge port (button)
    - Vent/close windows (cover)
    - Wake up vehicle (button)
@@ -165,4 +166,5 @@ The following are instructions if you use make. I have never used these so canno
 1. To verify the key was added, tap Controls > Locks, and you should see a new key named "Unknown device" in the list
 1. [optional] Rename your key to "ESPHome BLE" to make it easier to identify
     <img src="./docs/vehicle-locks.png" width="500">
+
 
