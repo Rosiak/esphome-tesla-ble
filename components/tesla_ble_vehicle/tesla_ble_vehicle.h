@@ -308,6 +308,7 @@ namespace esphome
                     ChargePowerStateSensor->publish_state (NAN);
                     MaxSocStateSensor->publish_state (NAN);
                     MaxAmpsStateSensor->publish_state (NAN);
+                    MinsToLimitStateSensor->publish_state (NAN);
                     ShiftStateSensor->publish_state ("Unknown");
                     DefrostStateSensor->publish_state ("Unknown");
                     ChargingStateSensor->publish_state ("Unknown");
@@ -346,6 +347,10 @@ namespace esphome
             void setMaxAmps (int max)
             {
                 MaxAmpsStateSensor->publish_state (max);
+            }
+            void setMinsToLimit (int limit)
+            {
+                MinsToLimitStateSensor->publish_state (limit);
             }
             void setBatteryRange (float range)
             {
@@ -435,6 +440,10 @@ namespace esphome
             void set_sensor_max_amps_state (sensor::Sensor *s)
             {
                 MaxAmpsStateSensor = static_cast<sensor::Sensor *>(s);
+            }
+            void set_sensor_mins_to_limit_state (sensor::Sensor *s)
+            {
+                MinsToLimitStateSensor = static_cast<sensor::Sensor *>(s);
             }
             void set_sensor_battery_range_state (sensor::Sensor *s)
             {
@@ -551,6 +560,7 @@ namespace esphome
             sensor::Sensor *ChargePowerStateSensor;
             sensor::Sensor *MaxSocStateSensor;
             sensor::Sensor *MaxAmpsStateSensor;
+            sensor::Sensor *MinsToLimitStateSensor;
             sensor::Sensor *BatteryRangeStateSensor;
             sensor::Sensor *outsideTempStateSensor;
             sensor::Sensor *insideTempStateSensor;
