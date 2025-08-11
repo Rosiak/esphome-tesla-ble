@@ -27,6 +27,7 @@ CONF_CHARGE_CURRENT = "charge_current"
 CONF_CHARGE_POWER = "charge_power"
 CONF_MAX_SOC = "max_soc"
 CONF_MAX_AMPS = "max_amps"
+CONF_MINS_TO_LIMIT = "mins_to_limit"
 CONF_BATTERY_RANGE = "battery_range"
 CONF_CHARGING_STATE = "charging_state"
 CONF_CHARGE_ENERGY_ADDED = "charge_energy_added"
@@ -110,6 +111,10 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_MAX_AMPS): sensor.sensor_schema(
                 icon="mdi:current-ac", device_class=sensor.DEVICE_CLASS_CURRENT,
                 unit_of_measurement="A"
+            ).extend(),
+            cv.Optional(CONF_MINS_TO_LIMIT): sensor.sensor_schema(
+                icon="mdi:timer-sand", device_class=sensor.DEVICE_CLASS_DURATION,
+                unit_of_measurement="min"
             ).extend(),
             cv.Optional(CONF_BATTERY_RANGE): sensor.sensor_schema(
                 icon="mdi:gauge", device_class=sensor.DEVICE_CLASS_DISTANCE,
@@ -207,6 +212,10 @@ async def to_code(config):
         conf = config[CONF_MAX_AMPS]
         ss = await sensor.new_sensor(conf)
         cg.add(var.set_sensor_max_amps_state(ss))
+    if CONF_MINS_TO_LIMIT in config:
+        conf = config[CONF_MINS_TO_LIMIT]
+        ss = await sensor.new_sensor(conf)
+        cg.add(var.set_sensor_mins_to_limit_state(ss))
     if CONF_BATTERY_RANGE in config:
         conf = config[CONF_BATTERY_RANGE]
         ss = await sensor.new_sensor(conf)
