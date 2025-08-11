@@ -65,6 +65,9 @@ tesla_ble_vehicle:
   max_amps:
     id: "max_amps"
     name: "Current limit"
+  mins_to_limit:
+    id: "mins_to_limit"
+    name: "Minutes to limit"
   battery_range:
     name: "Range"
   charging_state:
