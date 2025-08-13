@@ -36,7 +36,7 @@ esphome:
   name_add_mac_suffix: false
   friendly_name: ${friendly_name}
   libraries:
-    - https://github.com/PedroKTFC/tesla-ble.git
+    - TeslaBLE=https://github.com/PedroKTFC/tesla-ble.git
 
 tesla_ble_vehicle:
   odometer: # miles by default, edit the entity in home assistant if you need km
