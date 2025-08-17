@@ -24,6 +24,7 @@ CONF_FRUNK_STATE = "is_frunk_open"
 CONF_CHARGE_STATE = "charge_state"
 CONF_ODOMETER = "odometer"
 CONF_CHARGE_CURRENT = "charge_current"
+CONF_CHARGE_VOLTAGE = "charge_voltage"
 CONF_CHARGE_POWER = "charge_power"
 CONF_MAX_SOC = "max_soc"
 CONF_MAX_AMPS = "max_amps"
@@ -99,6 +100,10 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_CHARGE_CURRENT): sensor.sensor_schema(
                 icon="mdi:current-ac", device_class=sensor.DEVICE_CLASS_CURRENT,
                 unit_of_measurement="A"
+            ).extend(),
+            cv.Optional(CONF_CHARGE_VOLTAGE): sensor.sensor_schema(
+                icon="mdi:flash-triangle", device_class=sensor.DEVICE_CLASS_VOLTAGE,
+                unit_of_measurement="V"
             ).extend(),
             cv.Optional(CONF_CHARGE_POWER): sensor.sensor_schema(
                 icon="mdi:lightning-bolt-circle", device_class=sensor.DEVICE_CLASS_POWER,
@@ -200,6 +205,10 @@ async def to_code(config):
         conf = config[CONF_CHARGE_CURRENT]
         ss = await sensor.new_sensor(conf)
         cg.add(var.set_sensor_charge_current_state(ss))
+    if CONF_CHARGE_VOLTAGE in config:
+        conf = config[CONF_CHARGE_VOLTAGE]
+        ss = await sensor.new_sensor(conf)
+        cg.add(var.set_sensor_charge_voltage_state(ss))
     if CONF_CHARGE_POWER in config:
         conf = config[CONF_CHARGE_POWER]
         ss = await sensor.new_sensor(conf)
