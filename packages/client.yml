@@ -50,6 +50,9 @@ tesla_ble_vehicle:
   charge_current:
     id: "charge_current"
     name: "Charge current"
+  charge_voltage:
+    id: "charge_voltage"
+    name: "Charge voltage"  
   charge_power:
     id: "charge_power"
     name: "Charge power"
