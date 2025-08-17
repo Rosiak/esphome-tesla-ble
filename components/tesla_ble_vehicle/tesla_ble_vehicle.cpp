@@ -1747,6 +1747,7 @@ namespace esphome
             */
             setCarBatteryLevel (carserver_response.response_msg.vehicleData.charge_state.optional_usable_battery_level.usable_battery_level);
             setChargeCurrent (carserver_response.response_msg.vehicleData.charge_state.optional_charger_actual_current.charger_actual_current);
+            setChargeVoltage (carserver_response.response_msg.vehicleData.charge_state.optional_charger_voltage.charger_voltage);
             setChargePower (carserver_response.response_msg.vehicleData.charge_state.optional_charger_power.charger_power);
             setMaxSoc (carserver_response.response_msg.vehicleData.charge_state.optional_charge_limit_soc.charge_limit_soc);
             setMaxAmps (carserver_response.response_msg.vehicleData.charge_state.optional_charging_amps.charging_amps);
