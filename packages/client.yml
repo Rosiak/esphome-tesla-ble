@@ -50,6 +50,9 @@ tesla_ble_vehicle:
   charge_current:
     id: "charge_current"
     name: "Charge current"
+  charge_voltage:
+    id: "charge_voltage"
+    name: "Charge voltage"  
   charge_power:
     id: "charge_power"
     name: "Charge power"
@@ -65,6 +68,9 @@ tesla_ble_vehicle:
   max_amps:
     id: "max_amps"
     name: "Current limit"
+  mins_to_limit:
+    id: "mins_to_limit"
+    name: "Minutes to limit"
   battery_range:
     name: "Range"
   charging_state:
