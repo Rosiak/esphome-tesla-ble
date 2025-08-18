@@ -39,6 +39,7 @@ This project [PedroKTFC/esphome-tesla-ble](https://github.com/PedroKTFC/esphome-
   - Charge level (%)
   - Charge limit (%)
   - Charge power (kW)
+  - Charge voltage (V)
   - Charging state (eg Stopped, Charging, Complete)
   - Climate on/off
   - Current limit setting (Amps)
@@ -48,6 +49,7 @@ This project [PedroKTFC/esphome-tesla-ble](https://github.com/PedroKTFC/esphome-
   - Frunk open/closed
   - Interior temperature (°C)
   - Last update (the last time a response was received from the Infotainment system, does not go "Unknown" once a response has been received)
+  - Minutes to limit (time to charge limit, multiples of 5 minutes)
   - Odometer (miles)
   - Range (miles)
   - Shift state (eg Invalid, R, N, D)
@@ -167,5 +169,6 @@ The following are instructions if you use make. I have never used these so canno
 1. To verify the key was added, tap Controls > Locks, and you should see a new key named "Unknown device" in the list
 1. [optional] Rename your key to "ESPHome BLE" to make it easier to identify
     <img src="./docs/vehicle-locks.png" width="500">
+
 
 
