@@ -2,9 +2,9 @@
 
 This project [PedroKTFC/esphome-tesla-ble](https://github.com/PedroKTFC/esphome-tesla-ble) lets you use an ESP32 device to manage charging a Tesla vehicle over BLE. It is a fork of the [yoziru/esphome-tesla-ble](http://github.com/yoziru/esphome-tesla-ble) and uses a similar fork of the [yoziru/tesla-ble](http://github.com/yoziru/tesla-ble) library.
 
-| Controls | Sensors | Diagnostic |
-| - | - | - |
-| <img src="./docs/ha-controls.png"> | <img src="./docs/ha-sensors.png"> | <img src="./docs/ha-diagnostic.png"> |
+| Controls | Sensors-1 | Sensors-2| Diagnostic |
+| - | - | - | - |
+| <img src="./docs/ha-controls.png"> | <img src="./docs/ha-sensors1.png"> | <img src="./docs/ha-sensors2.png"> | <img src="./docs/ha-diagnostic.png"> |
 
 
 ## Features
@@ -169,6 +169,7 @@ The following are instructions if you use make. I have never used these so canno
 1. To verify the key was added, tap Controls > Locks, and you should see a new key named "Unknown device" in the list
 1. [optional] Rename your key to "ESPHome BLE" to make it easier to identify
     <img src="./docs/vehicle-locks.png" width="500">
+
 
 
 
