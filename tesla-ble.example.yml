@@ -16,11 +16,6 @@ api:
   encryption:
     key: xxxxxxxxxxxxx= # use "key: !secret your_secret_key_name" for greater security
 
-wifi:
-  ssid: !secret wifi_ssid
-  password: !secret wifi_password
-#  use_address: 172.16.0.109 # Uncomment this and put your board's IP address if you cannot connect to your board over WiFi
-
 external_components:
   source: github://PedroKTFC/esphome-tesla-ble
 
