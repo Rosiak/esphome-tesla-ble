@@ -44,8 +44,8 @@ esphome:
 
 # At the time of writing, these are set to the default values. If you require a different value, uncomment and edit the value
 #  update_interval: 10s # Base polling interval, used for VCSEC sensors
-#  post_wake_poll_time: 300 # How long to poll for data after car awakes (s)
-#  poll_data_period: 60 # Normal period when polling for data when not asleep (s)
+#  post_wake_poll_time: 300 # How long to poll for data after car awakes at poll_data_period speed (s)
+#  poll_data_period: 60 # Polling interval after awakening during post_wake_poll_time interval (s)
 #  poll_charging_period: 10 # Period to poll for data when charging (s)
 #  poll_asleep_period: 60 # Period to poll for data when asleep (s)
 #  ble_disconnected_min_time: 300 # Minimum time BLE must be disconnected before sensors are Unknown (s)
