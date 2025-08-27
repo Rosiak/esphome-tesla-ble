@@ -74,6 +74,7 @@ These are diagnostic button actions:
 
 ## Hardware
 
+- ESP32
 - [M5Stack Atom S3](https://docs.m5stack.com/en/core/AtomS3)
 - Alternatively, [M5Stack Atom S3-Lite](https://docs.m5stack.com/en/core/AtomS3%20Lite)
 - Alternatively, [M5Stack Nano C6](https://docs.m5stack.com/en/core/M5NanoC6)
@@ -115,7 +116,7 @@ By default the car reports miles, so this integration returns miles. In home ass
 **Recommended path**
 
 Use an appropriate BLE app on your phone (eg BLE Scanner) to scan for the BLE devices nearby (so be close to your car). You should see your car in the list of devices (its name will begin with an 'S') with the MAC address displayed.
-Copy and rename `secrets.yaml.example` to `secrets.yaml` and update it with your WiFi credentials (`wifi_ssid` and `wifi_password`) and vehicle VIN (`tesla_vin`) and BLE adress.
+Copy and rename `secrets.yaml.example` to `secrets.yaml` and update it with your WiFi credentials (`wifi_ssid` and `wifi_password`) and vehicle VIN (`tesla_vin`) and BLE MAC adress (`ble_mac_address`).
 
 **Alternative**
 
@@ -149,6 +150,7 @@ The following is the original method. I have never tried this and I do not maint
 **Recommended path**
 
 For an example ESPHome dashboard, see [`tesla-ble-example.yml`](./tesla-ble.example.yml). Please always start from this. I strongly recommend building this using the ESPHome Device Builder add-on in Home Assistant as this makes building and re-building (eg for updates) much easier.
+I you have limited experience with flashing ESP32 devices and want to get more familiar, check Lazy Tech Geek's video https://www.youtube.com/watch?v=XMpNJgozF-c
 
 **Alternative**
 
@@ -204,5 +206,6 @@ The following are instructions if you use `make`. I have never used these so can
 1. [optional] Rename your key to "ESPHome BLE" to make it easier to identify
 
     <img src="./docs/vehicle-locks.png" width="500">
+
 
 
