@@ -42,7 +42,7 @@ CONF_POST_WAKE_POLL_TIME = "post_wake_poll_time" # How long to poll for data aft
 CONF_POLL_DATA_PERIOD = "poll_data_period" # Normal period when polling for data when not asleep (s)
 CONF_POLL_ASLEEP_PERIOD = "poll_asleep_period" # Period to poll for data when asleep (s)
 CONF_POLL_CHARGING_PERIOD = "poll_charging_period" # Period to poll for data when charging (s)
-CONF_BLE_DISCONNECTED_MIN_TIME = "ble_disconnected_min_time" # Minimum time BLE must be disconnected before sensors are Unknwon (s)
+CONF_BLE_DISCONNECTED_MIN_TIME = "ble_disconnected_min_time" # Minimum time BLE must be disconnected before sensors are Unknown (s)
 CONF_FAST_POLL_IF_UNLOCKED = "fast_poll_if_unlocked" # if != 0, fast polls are enabled when unlocked
 
 CONFIG_SCHEMA = (
