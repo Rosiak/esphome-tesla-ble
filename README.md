@@ -74,6 +74,7 @@ These are diagnostic button actions:
 
 ## Hardware
 
+- ESP32
 - [M5Stack Atom S3](https://docs.m5stack.com/en/core/AtomS3)
 - Alternatively, [M5Stack Atom S3-Lite](https://docs.m5stack.com/en/core/AtomS3%20Lite)
 - Alternatively, [M5Stack Nano C6](https://docs.m5stack.com/en/core/M5NanoC6)
@@ -102,16 +103,24 @@ By default the car reports miles, so this integration returns miles. In home ass
 
 ## Pre-requisites
 
+**Recommended path**
+- Home Assistant [Add-On Esphome Device Builder](https://esphome.io/guides/getting_started_hassio#installing-esphome-device-builder)
+
+**Alternative**
 - Python 3.10+
 - GNU Make
-- Alternatively, Home Assistant [Add-On Esphome Device Builder](https://esphome.io/guides/getting_started_hassio#installing-esphome-device-builder)
+
 
 ## Finding the BLE MAC address of your vehicle
 
-I recommend two methods:
+**Recommended path**
 
-1. Use an appropriate BLE app on your phone (eg BLE Scanner) to scan for the BLE devices nearby (so be close to your car). You should see your car in the list of devices (its name will begin with an 'S') with the MAC address displayed.
-1. Build the scanner in the [`ble-scanner.yml`](./ble-scanner.yml) file. Once built, it will start scanning and print out the MAC address of any Tesla vehicles found in the logs. Building does take some time.
+Use an appropriate BLE app on your phone (eg BLE Scanner) to scan for the BLE devices nearby (so be close to your car). You should see your car in the list of devices (its name will begin with an 'S') with the MAC address displayed.
+Copy and rename `secrets.yaml.example` to `secrets.yaml` and update it with your WiFi credentials (`wifi_ssid` and `wifi_password`) and vehicle VIN (`tesla_vin`) and BLE MAC adress (`ble_mac_address`).
+
+**Alternative**
+
+Build the scanner in the [`ble-scanner.yml`](./ble-scanner.yml) file. Once built, it will start scanning and print out the MAC address of any Tesla vehicles found in the logs. Building does take some time.
 
 The following is the original method. I have never tried this and I do not maintain the associated file. I therefore do not recommend this but have left it here in case there are any people left who still use it.
 
@@ -138,7 +147,12 @@ The following is the original method. I have never tried this and I do not maint
 
 ## Building and flashing ESP32 firmware
 
+**Recommended path**
+
 For an example ESPHome dashboard, see [`tesla-ble-example.yml`](./tesla-ble.example.yml). Please always start from this. I strongly recommend building this using the ESPHome Device Builder add-on in Home Assistant as this makes building and re-building (eg for updates) much easier.
+If you have limited experience with flashing ESP32 devices and want to get more familiar, check Lazy Tech Geek's video https://www.youtube.com/watch?v=XMpNJgozF-c
+
+**Alternative**
 
 The following are instructions if you use `make`. I have never used these so cannot vouch for their accuracy (as I said above, it's far easier to use the ESPHome Device Builder add-on in Home Assistant). I welcome any feedback on improving/correcting these instructions - please raise an issue for it.
 
@@ -192,4 +206,7 @@ The following are instructions if you use `make`. I have never used these so can
 1. [optional] Rename your key to "ESPHome BLE" to make it easier to identify
 
     <img src="./docs/vehicle-locks.png" width="500">
+
+
+
 
