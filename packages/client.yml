@@ -99,30 +99,35 @@ button:
     entity_category: diagnostic
 
   - platform: template
+    id: btn_wake_up
     name: Wake up
     icon: mdi:sleep-off
     on_press:
     - lambda: id(tesla_ble_vehicle_id)->wakeVehicle();
 
   - platform: template
+    id: btn_flash_light
     name: Flash light
     icon: mdi:car-light-high
     on_press:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (FLASH_LIGHT, 0);
 
   - platform: template
+    id: btn_sound_horn
     name: Sound horn
     icon: mdi:bugle
     on_press:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (SOUND_HORN, 0);
 
   - platform: template
+    id: btn_unlock_chg_port
     name: Unlock charge port
     icon: mdi:ev-plug-ccs2
     on_press:
       - lambda: id(tesla_ble_vehicle_id)->sendVCSECClosureMoveRequestMessage (VCSEC_ClosureMoveRequest_chargePort_tag, VCSEC_ClosureMoveType_E_CLOSURE_MOVE_TYPE_OPEN);
 
   - platform: template
+    id: btn_unlatch_drv_door
     name: Unlatch driver door
     icon: mdi:car-door
     on_press:
@@ -130,6 +135,7 @@ button:
     disabled_by_default: true
 
   - platform: template
+      id: btn_regen_key
     name: Regenerate key
     icon: mdi:key-change
     on_press:
@@ -138,6 +144,7 @@ button:
     disabled_by_default: true
 
   - platform: template
+    id: btn_force_update
     name: Force data update
     icon: mdi:database-sync
     on_press:
@@ -156,6 +163,7 @@ sensor:
 
 switch:
   - platform: template
+    id: sw_charger
     name: "Charger"
     optimistic: true
     icon: mdi:lightning-bolt
@@ -172,6 +180,7 @@ switch:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_CHARGING_SWITCH, 0);
 
   - platform: template
+    id: sw_sentry
     name: "Sentry mode"
     optimistic: true
     icon: mdi:record-circle-outline
@@ -183,6 +192,7 @@ switch:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_SENTRY_SWITCH, 0);
   
   - platform: template
+    id: sw_climate
     name: "Climate"
     optimistic: true
     icon: mdi:fan
@@ -199,6 +209,7 @@ switch:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_HVAC_SWITCH, 0);
 
   - platform: template
+    id: sw_steer_whl_heat
     name: "Steering wheel heat"
     optimistic: true
     icon: mdi:steering
@@ -210,6 +221,7 @@ switch:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_HVAC_STEERING_HEATER_SWITCH, 0);
   
   - platform: template
+    id: sw_defrost
     name: Defrost car
     optimistic: true
     icon: mdi:snowflake-melt
@@ -225,12 +237,14 @@ switch:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (DEFROST_CAR, 0);
       
   - platform: ble_client
+    id: sw_ble_client
     ble_client_id: ble_tesla_id
     name: "BLE Connection"
     entity_category: diagnostic
 
 lock:
   - platform: template
+    id: lock_car
     name: "Lock car"
     optimistic: true
     icon: mdi:lock
@@ -249,6 +263,7 @@ lock:
 
 cover:
   - platform: template
+    id: cov_vent
     name: "Vent"
     optimistic: false #### true
     icon: mdi:car-door
@@ -267,6 +282,7 @@ cover:
           id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (SET_WINDOWS_SWITCH, 1);
 
   - platform: template
+    id: cov_chg_port
     name: "Charge port"
     optimistic: true
     device_class: door
@@ -284,6 +300,7 @@ cover:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_CLOSE_CHARGE_PORT_DOOR,1);
   
   - platform: template
+    id: cov_boot
     name: "Boot"
     optimistic: true
     device_class: door
@@ -301,6 +318,7 @@ cover:
       - lambda: id(tesla_ble_vehicle_id)->sendVCSECClosureMoveRequestMessage (VCSEC_ClosureMoveRequest_rearTrunk_tag, VCSEC_ClosureMoveType_E_CLOSURE_MOVE_TYPE_CLOSE);
 
   - platform: template
+    id: cov_frunk
     name: "Frunk"
     optimistic: true
     device_class: door
