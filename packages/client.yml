@@ -135,7 +135,7 @@ button:
     disabled_by_default: true
 
   - platform: template
-      id: btn_regen_key
+    id: btn_regen_key
     name: Regenerate key
     icon: mdi:key-change
     on_press:
