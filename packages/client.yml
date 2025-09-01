@@ -16,7 +16,7 @@ tesla_ble_vehicle:
   poll_data_period: 60 # Normal period when polling for data when not asleep (s)
   poll_asleep_period: 60 # Period to poll for data when asleep (s)
   poll_charging_period: 10 # Period to poll for data when charging (s)
-  ble_disconnected_min_time: 300 # Minimum time BLE must be disconnected before sensors are Unknown (s)
+  ble_disconnected_min_time: 300 # Minimum time BLE must be disconnected before sensors are Unknwon (s)
   fast_poll_if_unlocked: 1 # if != 0, fast polls are enabled when unlocked
 
   is_asleep:
@@ -335,7 +335,7 @@ number:
       {
         return id(max_amps).state;
       }
-      else return (0); 
+      else return (0);
   - platform: template
     name: "Charging limit"
     id: charging_limit
@@ -355,5 +355,107 @@ number:
       {
         return id(max_soc).state;
       }
-      else return (0); 
-        
+      else return (0);
+
+  - platform: template
+    id: post_wake_poll_time
+    name: "Post wake poll time"
+    icon: mdi:timelapse
+    min_value: 0
+    max_value: 1000
+    mode: box
+    step: 1
+    restore_value: true
+    initial_value: 300
+    optimistic: true
+    disabled_by_default: true
+    entity_category: config
+    on_value:
+      - lambda: |-
+          ESP_LOGW("Test", "New value %f", x);
+          id(tesla_ble_vehicle_id)->post_wake_poll_time_ = x * 1000;
+  - platform: template
+    id: poll_data_period
+    name: "Poll data period"
+    icon: mdi:timer-outline
+    min_value: 0
+    max_value: 1000
+    mode: box
+    step: 1
+    restore_value: true
+    initial_value: 60
+    optimistic: true
+    disabled_by_default: true
+    entity_category: config
+    on_value:
+      - lambda: |-
+          ESP_LOGW("Test", "New value %f", x);
+          id(tesla_ble_vehicle_id)->poll_data_period_ = x * 1000;
+  - platform: template
+    id: poll_asleep_period
+    name: "Poll asleep period"
+    icon: mdi:bed-clock
+    min_value: 0
+    max_value: 1000
+    mode: box
+    step: 1
+    restore_value: true
+    initial_value: 60
+    optimistic: true
+    disabled_by_default: true
+    entity_category: config
+    on_value:
+      - lambda: |-
+          ESP_LOGW("Test", "New value %f", x);
+          id(tesla_ble_vehicle_id)->poll_asleep_period_ = x * 1000;
+  - platform: template
+    id: poll_charging_period
+    name: "Poll charging period"
+    icon: mdi:timer-sync-outline
+    min_value: 0
+    max_value: 1000
+    mode: box
+    step: 1
+    restore_value: true
+    initial_value: 10
+    optimistic: true
+    disabled_by_default: true
+    entity_category: config
+    on_value:
+      - lambda: |-
+          ESP_LOGW("Test", "New value %f", x);
+          id(tesla_ble_vehicle_id)->poll_charging_period_ = x * 1000;
+  - platform: template
+    id: ble_disconnected_min_time
+    name: "BLE disconnected min time"
+    icon: mdi:bluetooth-connect
+    min_value: 0
+    max_value: 1000
+    mode: box
+    step: 1
+    restore_value: true
+    initial_value: 300
+    optimistic: true
+    disabled_by_default: true
+    entity_category: config
+    on_value:
+      - lambda: |-
+          ESP_LOGW("Test", "New value %f", x);
+          id(tesla_ble_vehicle_id)->ble_disconnected_min_time_ = x * 1000;
+  - platform: template
+    id: fast_poll_if_unlocked
+    name: "Fast poll if unlocked"
+    icon: mdi:car-door-lock-open
+    min_value: 0
+    max_value: 1
+    mode: box
+    step: 1
+    restore_value: true
+    initial_value: 1
+    optimistic: true
+    disabled_by_default: true
+    entity_category: config
+    on_value:
+      - lambda: |-
+          ESP_LOGW("Test", "New value %f", x);
+          id(tesla_ble_vehicle_id)->fast_poll_if_unlocked_ = x; // Not mS
