@@ -209,7 +209,7 @@ switch:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_HVAC_SWITCH, 0);
 
   - platform: template
-    id: sw_steer_whl_heat
+    id: sw_steering_wheel_heat
     name: "Steering wheel heat"
     optimistic: true
     icon: mdi:steering
@@ -390,7 +390,6 @@ number:
     entity_category: config
     on_value:
       - lambda: |-
-          ESP_LOGW("Test", "New value %f", x);
           id(tesla_ble_vehicle_id)->post_wake_poll_time_ = x * 1000;
   - platform: template
     id: poll_data_period
@@ -407,7 +406,6 @@ number:
     entity_category: config
     on_value:
       - lambda: |-
-          ESP_LOGW("Test", "New value %f", x);
           id(tesla_ble_vehicle_id)->poll_data_period_ = x * 1000;
   - platform: template
     id: poll_asleep_period
@@ -424,7 +422,6 @@ number:
     entity_category: config
     on_value:
       - lambda: |-
-          ESP_LOGW("Test", "New value %f", x);
           id(tesla_ble_vehicle_id)->poll_asleep_period_ = x * 1000;
   - platform: template
     id: poll_charging_period
@@ -441,7 +438,6 @@ number:
     entity_category: config
     on_value:
       - lambda: |-
-          ESP_LOGW("Test", "New value %f", x);
           id(tesla_ble_vehicle_id)->poll_charging_period_ = x * 1000;
   - platform: template
     id: ble_disconnected_min_time
@@ -458,7 +454,6 @@ number:
     entity_category: config
     on_value:
       - lambda: |-
-          ESP_LOGW("Test", "New value %f", x);
           id(tesla_ble_vehicle_id)->ble_disconnected_min_time_ = x * 1000;
   - platform: template
     id: fast_poll_if_unlocked
@@ -475,5 +470,4 @@ number:
     entity_category: config
     on_value:
       - lambda: |-
-          ESP_LOGW("Test", "New value %f", x);
           id(tesla_ble_vehicle_id)->fast_poll_if_unlocked_ = x; // Not mS
