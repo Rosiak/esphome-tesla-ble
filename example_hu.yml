@@ -73,13 +73,13 @@ button:
     name: "Fénykürt"
   - id: !extend btn_sound_horn
     name: "Dudaszó"
-  - id: !extend btn_unlock_chg_port
+  - id: !extend btn_unlock_charge_port
     name: "Töltőnyílás feloldása"
-  - id: !extend btn_unlatch_drv_door
+  - id: !extend btn_unlatch_driver_door
     name: "Vezetőajtó kinyitás"
-  - id: !extend btn_regen_key
+  - id: !extend btn_regenerate_key
     name: "Kulcs újragenerálása"
-  - id: !extend btn_force_update
+  - id: !extend btn_force_data_update
     name: "Kézi adatfrissítés"
 
 sensor:
@@ -89,15 +89,15 @@ sensor:
 switch:
   - id: !extend sw_charger
     name: "Töltés"
-  - id: !extend sw_sentry
+  - id: !extend sw_sentry_mode
     name: "Őrszem"
   - id: !extend sw_climate
     name: "Klíma"
   - id: !extend sw_steer_whl_heat
     name: "Kormányfűtés"
-  - id: !extend sw_defrost
+  - id: !extend sw_defrost_car
     name: "Fagymentesítés"
-  - id: !extend sw_ble_client
+  - id: !extend sw_ble_connection
     name: "BLE kapcsolat"
 
 lock:
@@ -107,7 +107,7 @@ lock:
 cover:
   - id: !extend cov_vent
     name: "Szellőztetés"
-  - id: !extend cov_chg_port
+  - id: !extend cov_charge_port
     name: "Töltőnyílás"
   - id: !extend cov_boot
     name: "Csomagtartó hátsó"
