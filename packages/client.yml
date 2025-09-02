@@ -235,7 +235,23 @@ switch:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (DEFROST_CAR, 1);
     turn_off_action:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (DEFROST_CAR, 0);
-      
+
+  - platform: template
+    id: fast_poll_if_unlocked
+    name: "Fast poll if unlocked"
+    optimistic: true
+    icon: mdi:car-door-lock-open
+    entity_category: config
+    restore_mode: RESTORE_DEFAULT_ON
+    on_state:
+      - if:
+          condition:
+            lambda: 'return x;'
+          then:
+            - lambda: id(tesla_ble_vehicle_id)->fast_poll_if_unlocked_ = 1;
+          else:
+            - lambda: id(tesla_ble_vehicle_id)->fast_poll_if_unlocked_ = 0;
+  
   - platform: ble_client
     id: sw_ble_connection
     ble_client_id: ble_tesla_id
@@ -455,19 +471,3 @@ number:
     on_value:
       - lambda: |-
           id(tesla_ble_vehicle_id)->ble_disconnected_min_time_ = x * 1000;
-  - platform: template
-    id: fast_poll_if_unlocked
-    name: "Fast poll if unlocked"
-    icon: mdi:car-door-lock-open
-    min_value: 0
-    max_value: 1
-    mode: box
-    step: 1
-    restore_value: true
-    initial_value: 1
-    optimistic: true
-    disabled_by_default: true
-    entity_category: config
-    on_value:
-      - lambda: |-
-          id(tesla_ble_vehicle_id)->fast_poll_if_unlocked_ = x; // Not mS
