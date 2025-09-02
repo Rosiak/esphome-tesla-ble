@@ -120,14 +120,14 @@ button:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (SOUND_HORN, 0);
 
   - platform: template
-    id: btn_unlock_chg_port
+    id: btn_unlock_charge_port
     name: Unlock charge port
     icon: mdi:ev-plug-ccs2
     on_press:
       - lambda: id(tesla_ble_vehicle_id)->sendVCSECClosureMoveRequestMessage (VCSEC_ClosureMoveRequest_chargePort_tag, VCSEC_ClosureMoveType_E_CLOSURE_MOVE_TYPE_OPEN);
 
   - platform: template
-    id: btn_unlatch_drv_door
+    id: btn_unlatch_driver_door
     name: Unlatch driver door
     icon: mdi:car-door
     on_press:
@@ -135,7 +135,7 @@ button:
     disabled_by_default: true
 
   - platform: template
-    id: btn_regen_key
+    id: btn_regenerate_key
     name: Regenerate key
     icon: mdi:key-change
     on_press:
@@ -144,7 +144,7 @@ button:
     disabled_by_default: true
 
   - platform: template
-    id: btn_force_update
+    id: btn_force_data_update
     name: Force data update
     icon: mdi:database-sync
     on_press:
@@ -180,7 +180,7 @@ switch:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_CHARGING_SWITCH, 0);
 
   - platform: template
-    id: sw_sentry
+    id: sw_sentry_mode
     name: "Sentry mode"
     optimistic: true
     icon: mdi:record-circle-outline
@@ -221,7 +221,7 @@ switch:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_HVAC_STEERING_HEATER_SWITCH, 0);
   
   - platform: template
-    id: sw_defrost
+    id: sw_defrost_car
     name: Defrost car
     optimistic: true
     icon: mdi:snowflake-melt
@@ -237,7 +237,7 @@ switch:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (DEFROST_CAR, 0);
       
   - platform: ble_client
-    id: sw_ble_client
+    id: sw_ble_connection
     ble_client_id: ble_tesla_id
     name: "BLE Connection"
     entity_category: diagnostic
@@ -282,7 +282,7 @@ cover:
           id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (SET_WINDOWS_SWITCH, 1);
 
   - platform: template
-    id: cov_chg_port
+    id: cov_charge_port
     name: "Charge port"
     optimistic: true
     device_class: door
