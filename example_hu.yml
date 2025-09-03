@@ -99,6 +99,8 @@ switch:
     name: "Fagymentesítés"
   - id: !extend sw_ble_connection
     name: "BLE kapcsolat"
+  - id: !extend fast_poll_if_unlocked
+    name: "Lekérdezés gyors nyitott zárnál"
 
 lock:
   - id: !extend lock_car
@@ -119,3 +121,13 @@ number:
     name: "Töltési áram"
   - id: !extend charging_limit
     name: "Töltési limit"
+  - id: !extend post_wake_poll_time
+    name: "Lekérdezés gyak. felébresztés után"
+  - id: !extend poll_data_period
+    name: "Lekérdezés gyak. alapértelmezett"
+  - id: !extend poll_asleep_period
+    name: "Lekérdezés gyak. alvó állapotban"
+  - id: !extend poll_charging_period
+    name: "Lekérdezés gyak. töltés közben"
+  - id: !extend ble_disconnected_min_time
+    name: "BLE lecsatlakozott állapot min idő"
