@@ -74,7 +74,7 @@ These are the diagnostic button actions:
 
 ### Configuration
 
-There are five number and one switch actions that allow the dynamic update of the polling parameters (see below). These are disabled by default as I recommend they should be changed through yaml but they are useful for tuning/debugging your setup. Note there is no equivalent to the *update_interval* parameter. The following lists them with the equivalent polling parameter:
+There are five number and one switch actions that allow the dynamic update of the polling parameters (see below). These are disabled by default as I recommend they should be changed through yaml but they are useful for tuning/debugging your setup. Note there is no equivalent to the *update_interval* parameter - this can still only be updated through yaml (and so a re-build). The following lists them with the equivalent polling parameter:
 
 - Post wake poll time = post_wake_poll_time (number)
 - Poll data period = poll_data_period (number)
@@ -216,6 +216,7 @@ The following are instructions if you use `make`. I have never used these so can
 1. [optional] Rename your key to "ESPHome BLE" to make it easier to identify
 
     <img src="./docs/vehicle-locks.png" width="500">
+
 
 
 
