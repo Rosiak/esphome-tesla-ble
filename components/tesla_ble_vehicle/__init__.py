@@ -110,7 +110,7 @@ CONFIG_SCHEMA = (
                 unit_of_measurement="kW"
             ).extend(),
             cv.Optional(CONF_MAX_SOC): sensor.sensor_schema(
-                icon="mdi:battery-lock", device_class=sensor.DEVICE_CLASS_ENERGY_STORAGE,
+                icon="mdi:battery-lock", device_class=sensor.DEVICE_CLASS_BATTERY,
                 unit_of_measurement="%"
             ).extend(),
             cv.Optional(CONF_MAX_AMPS): sensor.sensor_schema(

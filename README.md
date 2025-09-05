@@ -65,12 +65,23 @@ There are two categories, those available even when asleep and those only when a
 
 ### Diagnostics
 
-These are diagnostic button actions:
+These are the diagnostic button actions:
 
 - Force data update (wakes the car and reads all sensors)
 - Pair BLE key with vehicle
 - Regenerate key - will require repairing
 - Restart ESP board
+
+### Configuration
+
+There are five number and one switch actions that allow the dynamic update of the polling parameters (see below). These are disabled by default as I recommend they should be changed through yaml but they are useful for tuning/debugging your setup. Note there is no equivalent to the *update_interval* parameter - this can still only be updated through yaml (and so a re-build). The following lists them with the equivalent polling parameter:
+
+- Post wake poll time = post_wake_poll_time (number)
+- Poll data period = poll_data_period (number)
+- Poll asleep period = poll_asleep_period (number)
+- Poll charging period = poll_charging_period (number)
+- BLE disconnected min time = ble_disconnected_min_time (number)
+- Fast poll if unlocked = fast_poll_if_unlocked (switch)
 
 ## Hardware
 
@@ -109,7 +120,6 @@ By default the car reports miles, so this integration returns miles. In home ass
 **Alternative**
 - Python 3.10+
 - GNU Make
-
 
 ## Finding the BLE MAC address of your vehicle
 
@@ -206,6 +216,8 @@ The following are instructions if you use `make`. I have never used these so can
 1. [optional] Rename your key to "ESPHome BLE" to make it easier to identify
 
     <img src="./docs/vehicle-locks.png" width="500">
+
+
 
 
 
