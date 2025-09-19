@@ -74,7 +74,7 @@ These are the diagnostic button actions:
 
 ### Configuration
 
-There are five number and one switch actions that allow the dynamic update of the polling parameters (see below). These are disabled by default as I recommend they should be changed through yaml but they are useful for tuning/debugging your setup. Note there is no equivalent to the *update_interval* parameter - this can still only be updated through yaml (and so a re-build). The following lists them with the equivalent polling parameter:
+There are five number and two switch actions that allow the dynamic update of the polling parameters (see below). These are disabled by default as I recommend they should be changed through yaml but they are useful for tuning/debugging your setup. Note there is no equivalent to the `update_interval` parameter - this can still only be updated through yaml (and so a re-build). The following lists them with the equivalent polling parameter:
 
 - Post wake poll time = post_wake_poll_time (number)
 - Poll data period = poll_data_period (number)
@@ -82,6 +82,7 @@ There are five number and one switch actions that allow the dynamic update of th
 - Poll charging period = poll_charging_period (number)
 - BLE disconnected min time = ble_disconnected_min_time (number)
 - Fast poll if unlocked = fast_poll_if_unlocked (switch)
+- Wake on boot = wake_on_boot (switch)
 
 ## Hardware
 
@@ -93,20 +94,21 @@ There are five number and one switch actions that allow the dynamic update of th
 
 ## Usage
 
-**Vehicle Data Polling**
+### Vehicle data polling
 
 There are several key parameters that determine the polling activity as follows:
+| Name | Type | Default | Supported options | Description |
+| --- | --- | --- | --- | --- |
+|`update_interval`|number|10s|any interval|This is the base polling rate in seconds. **No other polls can happen faster than this even if you configure them shorter.** The base polling checks the overall status using the car’s VCSEC system (Vehicle Controller and Safety Electronics Controller, the central electronic control unit of a Tesla vehicle). It is polled at this rate and does not wake the car when asleep or prevent the car from going to sleep.|
+|`post_wake_poll_time`|number|300|>0 seconds|If the vehicle wakes up, it will be detected and the vehicle will be polled for data at a rate specified in `poll_data_period` for at least this number of seconds. After this, polling will fallback to a rate specified in `poll_asleep_period`. E.g. Suppose `post_wake_poll_time`=300, `poll_data_period`=60 and `poll_asleep_period`=120. In this case, when the care awakes, initially data will be polled each 60s for the first 300s. Then polling will continue each 120s.|
+|`poll_data_period`|number|60|>0 seconds|The vehicle is polled every this parameter seconds after becoming awake for a period of `post_wake_poll_time` seconds. Note the vehicle can stay awake if this is set too short.|
+|`poll_asleep_period`|number|60|>0 seconds|The vehicle is polled every this parameter seconds while being asleep and beyond the `post_wake_poll_time` after awakening. If set too short it can prevent the vehicle falling asleep.|
+|`poll_charging_period`|number|10|>0 seconds|While charging, the car can be polled more frequently if desired using this parameter.|
+|`ble_disconnected_min_time`|number|300|>0 seconds|Sensors will only be set to *Unknown* if the BLE connection remains disconnected for at least this time (useful if you have a slightly flakey BLE connection to your vehicle). Setting it to zero means sensors will be set to *Unknown* as soon as the BLE connection disconnects.|
+|`fast_poll_if_unlocked`|number|0|0, >0|Controls whether fast polls are enabled when unlocked. If the vehicle is unlocked (and `fast_poll_if_unlocked` > 0) or a person is detected as present in the vehicle, the vehicle will be polled at `update_interval` until it is locked and/or no person is present in the vehicle. This could be useful if you wish to quickly detect a change in the vehicle (for example, I use it to detect when it is put into gear so I can trigger an automation to open my electric gate). Set to 0 to disable, any value > 0 to enable.|
+|`wake_on_boot`|number|0|0, >0|Controls whether the car is woken when the board restarts. Set to 0 to not wake, any value > 0 to wake.|
 
-- **update_interval**: This is the base polling rate. **No other polls can happen faster than this even if you configure them shorter.** The base polling checks the overall status using the car’s VCSEC system (Vehicle Controller and Safety Electronics Controller, the central electronic control unit of a Tesla vehicle). It is polled at this rate and does not wake the car when asleep or prevent the car from going to sleep. [Default 10s]
-- **post_wake_poll_time**: If the vehicle wakes up, it will be detected and the vehicle will be polled for data at a rate specified in “poll_data_period” for at least this time. After that time, polling will fallback to a rate specified in “poll_asleep_period”. [Default 300s].
-E.g. Suppose “post_wake_poll_time”=300, “poll_data_period”=60 and “poll_asleep_period”=120. In this case, when the care awakes, initially, data will be polled each 60s for the first 300s. Then de polling will continue each 120s.  
-- **poll_data_period**: The vehicle is polled every this parameter seconds after becoming awake for a period of “post_wake_poll_time” seconds. Note the vehicle can stay awake if this is set too short [Default 60s]
-- **poll_asleep_period**: The vehicle is polled every this parameter seconds while being asleep and beyond the “post_wake_poll_time” after awakening. If set too short it can prevent the vehicle falling asleep. [Default 60s]
-- **poll_charging_period**: while charging, the car can be polled more frequently if desired using this parameter [Default 10s]
-- **ble_disconnected_min_time**: sensors will only be set to *Unknown* if the BLE connection remains disconnected for at least this time (useful if you have a slightly flakey BLE connection to your vehicle). Setting it to zero means sensors will be set to *Unknown* as soon as the BLE connection disconnects. [Default 300s]
-- **fast_poll_if_unlocked**: controls whether fast polls are enabled when unlocked. If the vehicle is unlocked (and fast_poll_if_unlocked > 0) or a person is detected as present in the vehicle, the vehicle will be polled at "update_interval" until it is locked and/or no person is present in the vehicle. This could be useful if you wish to quickly detect a change in the vehicle (for example, I use it to detect when it is put into gear so I can trigger an automation to open my electric gate). Set to 0 to disable, any value > 0 to enable [Default 1 and so enabled]
-
-Note that if the other parameters are not multiples of *update_interval*, the timings will be longer than expected. For example, if *update_interval* is set to 30s and *poll_data_period* is set to 75s, then the effective *poll_data_period* will be 90s.
+Note that if the other parameters are not multiples of `update_interval`, the timings will be longer than expected. For example, if `update_interval` is set to 30s and `poll_data_period` is set to 75s, then the effective `poll_data_period` will be 90s.
 
 ## Miles vs Km
 
@@ -216,6 +218,7 @@ The following are instructions if you use `make`. I have never used these so can
 1. [optional] Rename your key to "ESPHome BLE" to make it easier to identify
 
     <img src="./docs/vehicle-locks.png" width="500">
+
 
 
 
