@@ -1,5 +1,10 @@
 # ESPHome Tesla BLE
 
+[![GitHub Release][releases-shield]][releases]
+[![GitHub Activity][commits-shield]][commits]
+[![Last Commit][last-commit-shield]][commits]
+[![Platform][platform-shield]](https://github.com/esphome)
+
 This project [PedroKTFC/esphome-tesla-ble](https://github.com/PedroKTFC/esphome-tesla-ble) lets you use an ESP32 device to manage charging a Tesla vehicle over BLE. It is a fork of the [yoziru/esphome-tesla-ble](http://github.com/yoziru/esphome-tesla-ble) and uses a similar fork of the [yoziru/tesla-ble](http://github.com/yoziru/tesla-ble) library.
 
 | Controls | Sensors-1 | Sensors-2| Diagnostic |
@@ -220,8 +225,9 @@ The following are instructions if you use `make`. I have never used these so can
     <img src="./docs/vehicle-locks.png" width="500">
 
 
-
-
-
-
-
+[commits-shield]: https://img.shields.io/github/commit-activity/y/PedroKTFC/esphome-tesla-ble
+[commits]: https://github.com/PedroKTFC/esphome-tesla-ble/commits/main
+[releases-shield]: https://img.shields.io/github/v/release/PedroKTFC/esphome-tesla-ble
+[releases]: https://github.com/Blackymas/PedroKTFC/esphome-tesla-ble
+[last-commit-shield]: https://img.shields.io/github/last-commit/PedroKTFC/esphome-tesla-ble
+[platform-shield]: https://img.shields.io/badge/platform-Home%20Assistant%20&%20ESPHome-blue
