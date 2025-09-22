@@ -18,6 +18,7 @@ tesla_ble_vehicle:
   poll_charging_period: 10 # Period to poll for data when charging (s)
   ble_disconnected_min_time: 300 # Minimum time BLE must be disconnected before sensors are Unknwon (s)
   fast_poll_if_unlocked: 1 # if != 0, fast polls are enabled when unlocked
+  wake_on_boot: 0 # != 0 wakes car on device boot
 
   is_asleep:
     name: "Asleep"
@@ -242,7 +243,8 @@ switch:
     optimistic: true
     icon: mdi:car-door-lock-open
     entity_category: config
-    restore_mode: RESTORE_DEFAULT_ON
+    restore_mode: RESTORE_DEFAULT_OFF
+    disabled_by_default: true
     on_state:
       - if:
           condition:
@@ -251,7 +253,26 @@ switch:
             - lambda: id(tesla_ble_vehicle_id)->fast_poll_if_unlocked_ = 1;
           else:
             - lambda: id(tesla_ble_vehicle_id)->fast_poll_if_unlocked_ = 0;
+
+  - platform: template
+    id: wake_on_boot
+    name: "Wake on boot"
+    optimistic: true
+    icon: mdi:sleep-off
+    entity_category: config
+    restore_mode: RESTORE_DEFAULT_OFF
+    disabled_by_default: true
+    on_state:
+      - if:
+          condition:
+            lambda: 'return x;'
+          then:
+            - lambda: id(tesla_ble_vehicle_id)->wake_on_boot_ = 1;
+          else:
+            - lambda: id(tesla_ble_vehicle_id)->wake_on_boot_ = 0;
   
+
+
   - platform: ble_client
     id: sw_ble_connection
     ble_client_id: ble_tesla_id

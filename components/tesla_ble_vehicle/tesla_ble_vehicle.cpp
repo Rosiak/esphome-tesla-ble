@@ -969,16 +969,20 @@ namespace esphome
         switch (esp32_just_started_)
         {
         case 2:
-          // If the ESP32 has just started, do a wake even if already awake to ensure get an initial poll of its data
-          wakeVehicle(); // wake will cause poll assuming car available
+          // If the ESP32 has just started and wake on boot wanted, wake car even if already awake to get an initial poll of its data
+          if (wake_on_boot_ > 0)
+          {
+            wakeVehicle(); // wake will cause poll assuming car available
+          }
           esp32_just_started_++;
-          ESP_LOGI (TAG, "Polling parameters: post_wake_poll_time_ %i, poll_data_period_  %i, poll_asleep_period_ %i, poll_charging_period_  %i, ble_disconnected_min_time_  %i, fast_poll_if_unlocked_ %i",
+          ESP_LOGI (TAG, "Polling parameters: post_wake_poll_time_ %i, poll_data_period_  %i, poll_asleep_period_ %i, poll_charging_period_  %i, ble_disconnected_min_time_  %i, fast_poll_if_unlocked_ %i, wake_on_boot_ %i",
             post_wake_poll_time_,
             poll_data_period_,
             poll_asleep_period_,
             poll_charging_period_,
             ble_disconnected_min_time_,
-            fast_poll_if_unlocked_);
+            fast_poll_if_unlocked_,
+            wake_on_boot_);
           break;
         case 0:
         case 1:
@@ -1210,7 +1214,8 @@ namespace esphome
 
     void TeslaBLEVehicle::load_polling_parameters (const int post_wake_poll_time, const int poll_data_period,
                                                    const int poll_asleep_period, const int poll_charging_period,
-                                                   const int ble_disconnected_min_time, const int fast_poll_if_unlocked)
+                                                   const int ble_disconnected_min_time, const int fast_poll_if_unlocked,
+                                                   const int wake_on_boot)
     {
       // All timings are in milliseconds
       post_wake_poll_time_ = post_wake_poll_time * 1000;
@@ -1219,6 +1224,7 @@ namespace esphome
       poll_charging_period_ = poll_charging_period * 1000;
       ble_disconnected_min_time_ = ble_disconnected_min_time * 1000;
       fast_poll_if_unlocked_ = fast_poll_if_unlocked;
+      wake_on_boot_ = wake_on_boot;
     }
 
     void TeslaBLEVehicle::regenerateKey()
