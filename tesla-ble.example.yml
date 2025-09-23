@@ -6,6 +6,7 @@ substitutions:
   ble_mac_address: !secret ble_mac_address
   tesla_vin: !secret tesla_vin
   charging_amps_max: "32"
+#  ble_components: [tesla_ble_listener] # Uncomment this line to enable the listener (also uncomment the listener below
 
 esp32:
   board: esp32dev  # set as needed for your board
@@ -24,7 +25,7 @@ packages:
   common: github://PedroKTFC/esphome-tesla-ble/packages/common.yml
   project: github://PedroKTFC/esphome-tesla-ble/packages/project.yml
   client: github://PedroKTFC/esphome-tesla-ble/packages/client.yml
-  # listener: github://PedroKTFC/esphome-tesla-ble/packages/listener.yml # Uncomment this to scan find your VIN BLE MAC address
+  # listener: github://PedroKTFC/esphome-tesla-ble/packages/listener.yml # Uncomment this to scan find your VIN BLE MAC address (see also ble_components substitution)
 
 esphome:
   name: ${device_name}
