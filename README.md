@@ -97,6 +97,7 @@ There are five number and two switch actions that allow the dynamic update of th
 ### Vehicle data polling
 
 There are several key parameters that determine the polling activity as follows:
+
 | Name | Type | Default | Supported options | Description |
 | --- | --- | --- | --- | --- |
 |`update_interval`|number|10s|any interval|This is the base polling rate in seconds. **No other polls can happen faster than this even if you configure them shorter.** The base polling checks the overall status using the car’s VCSEC system (Vehicle Controller and Safety Electronics Controller, the central electronic control unit of a Tesla vehicle). It is polled at this rate and does not wake the car when asleep or prevent the car from going to sleep.|
@@ -218,6 +219,7 @@ The following are instructions if you use `make`. I have never used these so can
 1. [optional] Rename your key to "ESPHome BLE" to make it easier to identify
 
     <img src="./docs/vehicle-locks.png" width="500">
+
 
 
 
