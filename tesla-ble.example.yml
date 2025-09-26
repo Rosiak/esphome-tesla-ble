@@ -9,7 +9,6 @@ substitutions:
   #board: "esp32dev"
   #variant: "ESP32"
 
-
 api:
   encryption:
     key: xxxxxxxxxxxxx= # use "key: !secret your_secret_key_name" for greater security
