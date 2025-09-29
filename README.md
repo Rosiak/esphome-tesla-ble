@@ -176,6 +176,7 @@ with
   board: esp32-c6-devkitm-1
   variant: esp32c6
 Optionally, by adding the code below a RBG LEd can be installend which can can be used in your automations (e.g. to visually represent the loading status).
+```
 light:
   - platform: esp32_rmt_led_strip
     rgb_order: GRB
@@ -191,8 +192,7 @@ power_supply:
     pin: GPIO19
     enable_time: 10ms
     keep_on_time: 10ms
-
-
+```
 If you have limited experience with flashing ESP32 devices and want to get more familiar, check Lazy Tech Geek's video https://www.youtube.com/watch?v=XMpNJgozF-c
 
 **Alternative**
@@ -256,4 +256,5 @@ The following are instructions if you use `make`. I have never used these so can
 [releases]: https://github.com/Blackymas/PedroKTFC/esphome-tesla-ble
 [last-commit-shield]: https://img.shields.io/github/last-commit/PedroKTFC/esphome-tesla-ble
 [platform-shield]: https://img.shields.io/badge/platform-Home%20Assistant%20&%20ESPHome-blue
+
 
