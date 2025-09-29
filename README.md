@@ -168,6 +168,31 @@ The following is the original method. I have never tried this and I do not maint
 **Recommended path**
 
 For an example ESPHome dashboard, see [`tesla-ble-example.yml`](./tesla-ble.example.yml). Please always start from this. I strongly recommend building this using the ESPHome Device Builder add-on in Home Assistant as this makes building and re-building (eg for updates) much easier.
+
+The [`tesla-ble-example.yml`](./tesla-ble.example.yml) is setup to be used with a standard ESP32 device. If you want to use a [M5Stack Nano C6](https://docs.m5stack.com/en/core/M5NanoC6), then replace the lines 
+  board: "esp32dev"
+  variant: "ESP32"
+with
+  board: esp32-c6-devkitm-1
+  variant: esp32c6
+Optionally, by adding the code below a RBG LEd can be installend which can can be used in your automations (e.g. to visually represent the loading status).
+light:
+  - platform: esp32_rmt_led_strip
+    rgb_order: GRB
+    pin: GPIO20
+    num_leds: 4
+    chipset: ws2812
+    name: "RGB LED"
+    entity_category: diagnostic
+    power_supply: rgbpwr
+power_supply:
+  - id: 'rgbpwr'
+    enable_on_boot: true
+    pin: GPIO19
+    enable_time: 10ms
+    keep_on_time: 10ms
+
+
 If you have limited experience with flashing ESP32 devices and want to get more familiar, check Lazy Tech Geek's video https://www.youtube.com/watch?v=XMpNJgozF-c
 
 **Alternative**
