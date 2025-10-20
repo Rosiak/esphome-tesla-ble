@@ -11,6 +11,23 @@ This project [PedroKTFC/esphome-tesla-ble](https://github.com/PedroKTFC/esphome-
 | - | - | - | - |
 | <img src="./docs/ha-controls.png"> | <img src="./docs/ha-sensors1.png"> | <img src="./docs/ha-sensors2.png"> | <img src="./docs/ha-diagnostic.png"> |
 
+## If it doesn't build
+
+I've put this section at the start because it seems people don't always read all the way to the end! So please read this section at least.
+> [!TIP]
+> **Always** start from the example yaml [`tesla-ble-example.yml`](./tesla-ble.example.yml). This has been tested many times and should work in almost every case.
+
+If the build fails, try the following (assuming you're building using the Home Assistant ESPHome builder):
+- In the ESPHome builder UI, clean the build files (as shown in the image below) and try installing again. If that doesn't work, try the next step.
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img width="35%" alt="image" src="https://github.com/user-attachments/assets/17b8a954-9af1-4c0b-9f64-bc0f5405f93c" />
+- Uninstall and install the ESPHome add-on and try installing again.
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img width="25%" alt="image" src="https://github.com/user-attachments/assets/9700c133-4f2c-494a-8a42-4d4ab1d83942" />
+
+> [!TIP]
+> If these don't work, raise an issue and include a copy of your yaml and that part of your log that shows the error and I'll try to work out what's going wrong. (If you don't provide these, I'm afraid I'll simply ask you for them in the issue, I can't help without any information.)
+
 ## Features
 
 ### Controls
@@ -231,4 +248,5 @@ The following are instructions if you use `make`. I have never used these so can
 [releases]: https://github.com/Blackymas/PedroKTFC/esphome-tesla-ble
 [last-commit-shield]: https://img.shields.io/github/last-commit/PedroKTFC/esphome-tesla-ble
 [platform-shield]: https://img.shields.io/badge/platform-Home%20Assistant%20&%20ESPHome-blue
+
 
