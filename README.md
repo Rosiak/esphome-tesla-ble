@@ -28,7 +28,7 @@ If the build fails, try the following (assuming you're building using the Home A
 
 - Uninstall and install the ESPHome add-on and try installing again.
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img width="25%" alt="image" src="https://github.com/user-attachments/assets/9700c133-4f2c-494a-8a42-4d4ab1d83942" />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img width="25%" alt="image" src="https://github.com/user-attachments/assets/9700c133-4f2c-494a-8a42-4d4ab1d83942" />
 
 > [!TIP]
 > If these don't work, raise an issue and include a copy of your yaml and that part of your log that shows the error and I'll try to work out what's going wrong. (If you don't provide these, I'm afraid I'll simply ask you for them in the issue, I can't help without any information.)
@@ -253,6 +253,7 @@ The following are instructions if you use `make`. I have never used these so can
 [releases]: https://github.com/Blackymas/PedroKTFC/esphome-tesla-ble
 [last-commit-shield]: https://img.shields.io/github/last-commit/PedroKTFC/esphome-tesla-ble
 [platform-shield]: https://img.shields.io/badge/platform-Home%20Assistant%20&%20ESPHome-blue
+
 
 
 
