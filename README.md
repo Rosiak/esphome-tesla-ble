@@ -172,8 +172,8 @@ For an example ESPHome dashboard, see [`tesla-ble-example.yml`](./tesla-ble.exam
 - ESP32: The [`tesla-ble-example.yml`](./tesla-ble.example.yml) is setup to be used with a standard ESP32 device.
 - M5Stack Nano C6: If you want to use a [M5Stack Nano C6](https://docs.m5stack.com/en/core/M5NanoC6), then replace the lines:
   ```
-  board: "esp32dev"
-  variant: "ESP32"
+  #board: "esp32dev"
+  #variant: "ESP32"
   ```
   with
   ```
