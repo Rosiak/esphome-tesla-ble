@@ -101,7 +101,7 @@ These are the diagnostic button actions:
 
 ### Configuration
 
-There are five number and two switch actions that allow the dynamic update of the polling parameters (see below). These are disabled by default as I recommend they should be changed through yaml but they are useful for tuning/debugging your setup. Note there is no equivalent to the `update_interval` parameter - this can still only be updated through yaml (and so a re-build). The following lists them with the equivalent polling parameter:
+There are five number and two switch actions that allow the dynamic update of the polling parameters (see below). These are disabled by default as I recommend they should be changed through yaml but they are useful for tuning/debugging your setup. If enabled, their setting takes priority over the yaml definition and they are preserved over a reboot. Note there is no equivalent to the `update_interval` parameter - this can still only be updated through yaml (and so a re-build). The following lists them with the equivalent polling parameter:
 
 - Post wake poll time = post_wake_poll_time (number)
 - Poll data period = poll_data_period (number)
@@ -123,7 +123,7 @@ There are five number and two switch actions that allow the dynamic update of th
 
 ### Vehicle data polling
 
-There are several key parameters that determine the polling activity as follows:
+There are several parameters that determine the polling activity which are described in the table below. The polling engine loops every `update_interval` seconds and, as a minimum, polls the car's VCSEC system. All other polls are based on this so that if any of the other parameters are not multiples of `update_interval`, the timings will be longer than expected. For example, if `update_interval` is set to 30s and `poll_data_period` is set to 75s, then the effective `poll_data_period` will be 90s.
 
 | Name | Type | Default | Supported options | Description |
 | --- | --- | --- | --- | --- |
@@ -133,10 +133,10 @@ There are several key parameters that determine the polling activity as follows:
 |`poll_asleep_period`|number|60|>0 seconds|The vehicle is polled every this parameter seconds while being asleep and beyond the `post_wake_poll_time` after awakening. If set too short it can prevent the vehicle falling asleep.|
 |`poll_charging_period`|number|10|>0 seconds|While charging, the car can be polled more frequently if desired using this parameter.|
 |`ble_disconnected_min_time`|number|300|>0 seconds|Sensors will only be set to *Unknown* if the BLE connection remains disconnected for at least this time (useful if you have a slightly flakey BLE connection to your vehicle). Setting it to zero means sensors will be set to *Unknown* as soon as the BLE connection disconnects.|
-|`fast_poll_if_unlocked`|number|0|0, >0|Controls whether fast polls are enabled when unlocked. If the vehicle is unlocked (and `fast_poll_if_unlocked` > 0) or a person is detected as present in the vehicle, the vehicle will be polled at `update_interval` until it is locked and/or no person is present in the vehicle. This could be useful if you wish to quickly detect a change in the vehicle (for example, I use it to detect when it is put into gear so I can trigger an automation to open my electric gate). Set to 0 to disable, any value > 0 to enable.|
+|`fast_poll_if_unlocked`|number|0|0, >0|Controls whether fast polls are enabled when unlocked. If the vehicle is unlocked (and `fast_poll_if_unlocked` > 0), it will be polled at `update_interval` until it is locked. This could be useful if you wish to quickly detect a change in the vehicle (for example, I use it to detect when it is put into gear so I can trigger an automation to open my electric gate). Set to 0 to disable, any value > 0 to enable.|
 |`wake_on_boot`|number|0|0, >0|Controls whether the car is woken when the board restarts. Set to 0 to not wake, any value > 0 to wake.|
 
-Note that if the other parameters are not multiples of `update_interval`, the timings will be longer than expected. For example, if `update_interval` is set to 30s and `poll_data_period` is set to 75s, then the effective `poll_data_period` will be 90s.
+Note that while a user is present in the car (recall this is a VCSEC status so is polled for even when the car is asleep), polling will occur at `update_interval` and all sensors updated.
 
 ## Miles vs Km
 
@@ -283,6 +283,7 @@ The following are instructions if you use `make`. I have never used these so can
 [releases]: https://github.com/Blackymas/PedroKTFC/esphome-tesla-ble
 [last-commit-shield]: https://img.shields.io/github/last-commit/PedroKTFC/esphome-tesla-ble
 [platform-shield]: https://img.shields.io/badge/platform-Home%20Assistant%20&%20ESPHome-blue
+
 
 
 
