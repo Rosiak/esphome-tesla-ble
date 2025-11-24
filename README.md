@@ -118,6 +118,9 @@ There are five number and two switch actions that allow the dynamic update of th
 - Alternatively, [M5Stack Atom S3-Lite](https://docs.m5stack.com/en/core/AtomS3%20Lite)
 - Alternatively, [M5Stack Nano C6](https://docs.m5stack.com/en/core/M5NanoC6)
 - USB-C cable to flash conveniently the M5Stack of your choice
+- [ESP32 C3 Super Mini](https://www.espboards.dev/esp32/esp32-c3-super-mini/)
+
+See below for build instructions for different board types.
 
 ## Usage
 
@@ -171,7 +174,6 @@ The following is the original method. I have never tried this and I do not maint
 1. Build and flash the firmware to your ESP32 device. See the 'Building and flashing ESP32 firmware' section below.
 1. Open the ESPHome logs in Home Assistant and wake it up. Watch for the "Found Tesla vehicle" message, which will contain the BLE MAC address of your vehicle.
     > Note: The vehicle must be in range and awake for the BLE MAC address to be discovered. If the vehicle is not awake, open the Tesla app and run any command
-
     ```log
     [00:00:00][D][tesla_ble_listener:044]: Parsing device: [CC:BB:D1:E2:34:F0]: BLE Device name 1
     [00:00:00][D][tesla_ble_listener:044]: Parsing device: [19:8A:BB:C3:D2:1F]: 
@@ -180,21 +182,27 @@ The following is the original method. I have never tried this and I do not maint
     [00:00:00][D][tesla_ble_listener:044]: Parsing device: [A0:B1:C2:D3:E4:F5]: S1a87a5a75f3df858C
     [00:00:00][I][tesla_ble_listener:054]: Found Tesla vehicle | Name: S1a87a5a75f3df858C | MAC: A0:B1:C2:D3:E4:F5
     ```
-
 1. Clean up your environment before the next step by disabling the `tesla_ble_listener` package in `packages/base.yml` and running
-
     ```sh
     make clean
     ```
-
 ## Building and flashing ESP32 firmware
 
-**Recommended path**
+### Recommended path
 
 For an example ESPHome dashboard, see [`tesla-ble-example.yml`](./tesla-ble.example.yml). Please always start from this. I strongly recommend building this using the ESPHome Device Builder add-on in Home Assistant as this makes building and re-building (eg for updates) much easier.
 
-- ESP32: The [`tesla-ble-example.yml`](./tesla-ble.example.yml) is setup to be used with a standard ESP32 device.
-- M5Stack Nano C6: If you want to use a [M5Stack Nano C6](https://docs.m5stack.com/en/core/M5NanoC6), then replace the lines:
+### Board types
+
+Various board types have been shown to work with this project. Always start from [`tesla-ble-example.yml`](./tesla-ble.example.yml). Some boards require additional/changed yaml as explained below.
+
+#### Standard ESP32 device
+
+The [`tesla-ble-example.yml`](./tesla-ble.example.yml) file is setup to be used with a standard ESP32 device.
+
+#### M5Stack Nano C6
+
+If you want to use a [M5Stack Nano C6](https://docs.m5stack.com/en/core/M5NanoC6), then replace the lines:
   ```
   #board: "esp32dev"
   #variant: "ESP32"
@@ -204,7 +212,7 @@ For an example ESPHome dashboard, see [`tesla-ble-example.yml`](./tesla-ble.exam
   board: esp32-c6-devkitm-1
   variant: esp32c6
   ```
-  Optionally, by adding the code below, a RBG LED can be installed which can can be used in your automations (e.g. to visually represent the loading status):
+Optionally, by adding the code below, a RBG LED can be installed which can can be used in your automations (e.g. to visually represent the loading status):
   ```
   light:
     - platform: esp32_rmt_led_strip
@@ -221,10 +229,93 @@ For an example ESPHome dashboard, see [`tesla-ble-example.yml`](./tesla-ble.exam
       pin: GPIO19
       enable_time: 10ms
       keep_on_time: 10ms
-  ```  
-If you have limited experience with flashing ESP32 devices and want to get more familiar, check Lazy Tech Geek's video https://www.youtube.com/watch?v=XMpNJgozF-c
+  ```
+#### ESP32 C3 Super Mini
 
-**Alternative**
+If you want to use a [ESP32 C3 Super Mini](https://www.espboards.dev/esp32/esp32-c3-super-mini/), then replace the lines:
+  ```
+  #board: "esp32dev"
+  #variant: "ESP32"
+  ```
+  with
+  ```
+  board: "esp32-c3-devkitm-1"
+  variant: "ESP32C3"
+  ```
+Add the following:
+  ```
+  # Enhanced reconnect behavior
+  reboot_timeout: 15min  # Reboot if no connection after 15 minutes
+  power_save_mode: none  # Better reliability over power saving
+  ```
+You can configure the LED and buttons to perform actions as required. This is an example with a button used to open the charge flap and another to reboot the device.
+  ```
+light:
+  - platform: status_led
+    name: "Status LED"
+    id: esp_status_led
+    icon: "mdi:alarm-light"
+    pin:
+      number: GPIO8
+      inverted: true
+      ignore_strapping_warning: true 
+    restore_mode: ALWAYS_OFF
+
+# Define the button on GPIO10
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO10
+      mode: INPUT
+      inverted: true      # Button will be active LOW (pressed when the pin is low)
+    name: "MENU"
+    icon: "mdi:radiobox-blank"
+    on_press:
+      - light.toggle: esp_status_led  # Toggle the internal LED when the button is pressed
+    on_double_click:
+      - logger.log: "Double-click detected on MENU button! Rebooting..."
+      - delay: 500ms
+      - button.press: reboot_device
+# Define the button on GPIO0
+  - platform: gpio
+    pin:
+      number: GPIO0
+      mode: INPUT
+      inverted: true      # Button will be active LOW (pressed when the pin is low)
+    name: "ENTER"
+    icon: "mdi:car-door-lock-open"
+    on_press:
+      - light.toggle: esp_status_led  # Toggle the internal LED when the button is pressed
+# Define the button on GPIO1
+  - platform: gpio
+    pin:
+      number: GPIO1
+      mode: INPUT
+      inverted: true      # Button will be active LOW (pressed when the pin is low)
+    name: "DOWN"
+    icon: "mdi:radiobox-blank"
+    on_press:
+      - light.toggle: esp_status_led  # Toggle the internal LED when the button is pressed
+# Define the button on GPIO3
+  - platform: gpio
+    pin:
+      number: GPIO3
+      mode: INPUT
+      inverted: true      # Button will be active LOW (pressed when the pin is low)
+    name: "ESC"
+    icon: "mdi:ev-plug-type2"
+    on_press:
+      - light.toggle: esp_status_led  # Toggle the internal LED when the button is pressed
+    on_double_click: 
+      - lambda: id(tesla_ble_vehicle_id)->sendVCSECClosureMoveRequestMessage (VCSEC_ClosureMoveRequest_chargePort_tag, VCSEC_ClosureMoveType_E_CLOSURE_MOVE_TYPE_OPEN);
+
+button:
+  - platform: restart
+    name: "Reboot Device"
+    id: reboot_device
+  ```
+If you have limited experience with flashing ESP32 devices and want to get more familiar, check Lazy Tech Geek's video https://www.youtube.com/watch?v=XMpNJgozF-c
+### Alternative build method using make
 
 The following are instructions if you use `make`. I have never used these so cannot vouch for their accuracy (as I said above, it's far easier to use the ESPHome Device Builder add-on in Home Assistant). I welcome any feedback on improving/correcting these instructions - please raise an issue for it.
 
@@ -285,6 +376,7 @@ The following are instructions if you use `make`. I have never used these so can
 [releases]: https://github.com/Blackymas/PedroKTFC/esphome-tesla-ble
 [last-commit-shield]: https://img.shields.io/github/last-commit/PedroKTFC/esphome-tesla-ble
 [platform-shield]: https://img.shields.io/badge/platform-Home%20Assistant%20&%20ESPHome-blue
+
 
 
 
