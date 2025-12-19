@@ -59,7 +59,7 @@ tesla_ble_vehicle:
   is_climate_on:
     name: "Klimaanlage"
   internal_temp:
-    name: "Innere Temperatur"
+    name: "Innenraumtemperatur"
   external_temp:
     name: "Außentemperatur"
   windows_state:
@@ -125,4 +125,5 @@ number:
   - id: !extend poll_charging_period
     name: "Abfrageintervall beim Laden"
   - id: !extend ble_disconnected_min_time
+
     name: "Min. Zeit für BLE-Trennung"
