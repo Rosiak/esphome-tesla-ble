@@ -1,5 +1,5 @@
-# including this file will regionalize the entities to Hungarian:
-# - localize all names to Hungarian terminology
+n# including this file will regionalize the entities to German:
+# - localize all names to German terminology
 # - use km. instead of mi for distance units by default
 
 
@@ -127,3 +127,4 @@ number:
   - id: !extend ble_disconnected_min_time
 
     name: "Min. Zeit für BLE-Trennung"
+
