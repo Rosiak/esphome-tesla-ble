@@ -100,9 +100,10 @@ These are the diagnostic button actions:
 - Regenerate key - will require repairing
 - Restart ESP board
 
-There are also several self-explanatory sensors. The `BLE Status` sensor reports if the ESP board is connected to the car. By default this reports the car as disconnected if the car isn't seen for more than 5 seconds.
+There are also several self-explanatory sensors. The `BLE Status` sensor reports if the ESP board is connected to the car. By default this reports the car as disconnected if the car isn't seen for over 30 seconds.
 > [!TIP]
-> There is a subsitution value `ble_presence_timeout` available to change this if you wish. For example, to change it to two  minutes use `  ble_presence_timeout: 120s`.
+> There is a substitution value `ble_presence_timeout` available to change this if you wish. For example, to change it to two  minutes use
+> `  ble_presence_timeout: 120s`.
 
 ### Configuration
 
@@ -203,7 +204,7 @@ Various board types have been shown to work with this project. Always start from
 
 The [`tesla-ble-example.yml`](./tesla-ble.example.yml) file is setup to be used with a standard ESP32 device.
 
-### Alternative build method using make
+**Alternative**
 
 The following are instructions if you use `make`. I have never used these so cannot vouch for their accuracy (as I said above, it's far easier to use the ESPHome Device Builder add-on in Home Assistant). I welcome any feedback on improving/correcting these instructions - please raise an issue for it.
 
@@ -264,11 +265,6 @@ The following are instructions if you use `make`. I have never used these so can
 [releases]: https://github.com/Blackymas/PedroKTFC/esphome-tesla-ble
 [last-commit-shield]: https://img.shields.io/github/last-commit/PedroKTFC/esphome-tesla-ble
 [platform-shield]: https://img.shields.io/badge/platform-Home%20Assistant%20&%20ESPHome-blue
-
-
-
-
-
 
 
 
