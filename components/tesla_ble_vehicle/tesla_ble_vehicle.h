@@ -5,6 +5,9 @@
 #include <iterator>
 #include <vector>
 #include <queue>
+#include <array>
+#include <unordered_map>
+#include <functional>
 
 #include <esp_gattc_api.h>
 #include <esphome/components/binary_sensor/binary_sensor.h>
@@ -12,7 +15,6 @@
 #include <esphome/components/sensor/sensor.h>
 #include <esphome/components/ble_client/ble_client.h>
 #include <esphome/components/esp32_ble_tracker/esp32_ble_tracker.h>
-#include <esphome/components/sensor/sensor.h>
 #include <esphome/core/component.h>
 #include <esphome/core/log.h>
 
@@ -27,65 +29,6 @@ namespace TeslaBLE
     class Client;
 }
 
-typedef enum BLE_CarServer_VehicleAction_E
-{
-    DO_NOTHING, // Blank empty entry
-    GET_CHARGE_STATE,
-    GET_CLIMATE_STATE,
-    GET_DRIVE_STATE,
-    GET_LOCATION_STATE,
-    GET_CLOSURES_STATE,
-    GET_TYRES_STATE,
-    SET_CHARGING_SWITCH,
-    SET_CHARGING_AMPS,
-    SET_CHARGING_LIMIT,
-    SET_SENTRY_SWITCH,
-    SET_HVAC_SWITCH,
-    SET_HVAC_STEERING_HEATER_SWITCH,
-    SET_OPEN_CHARGE_PORT_DOOR,
-    SET_CLOSE_CHARGE_PORT_DOOR,
-    SOUND_HORN,
-    FLASH_LIGHT,
-    SET_WINDOWS_SWITCH,
-    DEFROST_CAR
-} BLE_CarServer_VehicleAction;
-
-typedef enum // The type of messages to send
-{
-    VehicleActionMessage,
-    GetVehicleDataMessage,
-    Empty
-} AllowedMsg;
-
-typedef enum 
-/*
-*   The type of get to do immediately following a set (having this means a new set doesn't need a code change if it uses an existing
-*   getxxxstate call.
-*/
-{
-    GetChargeState,
-    GetClimateState,
-    GetDriveState,
-    GetLocationState,
-    GetClosureState,
-    Invalid // Eg a data read, sensor not yet implemented, etc
-} GetOnSet;
-
-struct ActionMessageDetail
-/*
-*   This defines the contents of the rows of the ACTION_SPECIFICS table below. For every localActionDef, this describes the specific
-*   contents for the message to send to the car. The rows of the table must be in the same order as BLE_CarServer_VehicleAction.
-*   If a new message is needed, simply add a row to the table with the appropriate contents, no need to edit the code in the .cpp.
-*/
-{
-    BLE_CarServer_VehicleAction_E localActionDef;
-    std::string action_str;
-    AllowedMsg whichMsg;
-    int actionTag;
-    GetOnSet getOnSet;
-    int numberUpdatesBetweenGets; // Only used for GetVehicleDataMessage
-};
-
 namespace esphome
 {
 
@@ -93,29 +36,87 @@ namespace esphome
     {
         namespace espbt = esphome::esp32_ble_tracker;
 
-        static const struct ActionMessageDetail ACTION_SPECIFICS[] =
+        enum class BLE_CarServer_VehicleAction
         {
-            {DO_NOTHING,                       "",                          Empty,                 0,                                                              Invalid,         0},
-            {GET_CHARGE_STATE,                 "getChargeState",            GetVehicleDataMessage, CarServer_GetVehicleData_getChargeState_tag,                    Invalid,         1},
-            {GET_CLIMATE_STATE,                "getClimateState",           GetVehicleDataMessage, CarServer_GetVehicleData_getClimateState_tag,                   Invalid,         5},
-            {GET_DRIVE_STATE,                  "getDriveState",             GetVehicleDataMessage, CarServer_GetVehicleData_getDriveState_tag,                     Invalid,         1},
-            {GET_LOCATION_STATE,               "getLocationState",          GetVehicleDataMessage, CarServer_GetVehicleData_getLocationState_tag,                  Invalid,         10},
-            {GET_CLOSURES_STATE,               "getClosuresState",          GetVehicleDataMessage, CarServer_GetVehicleData_getClosuresState_tag,                  Invalid,         6},
-            {GET_TYRES_STATE,                  "getTyresState",             GetVehicleDataMessage, CarServer_GetVehicleData_getTirePressureState_tag,              Invalid,         17},
-            {SET_CHARGING_SWITCH,              "setChargingSwitch",         VehicleActionMessage,  CarServer_VehicleAction_chargingStartStopAction_tag,            GetChargeState,  0},
-            {SET_CHARGING_AMPS,                "setChargingAmps",           VehicleActionMessage,  CarServer_VehicleAction_setChargingAmpsAction_tag,              GetChargeState,  0},
-            {SET_CHARGING_LIMIT,               "setChargingLimit",          VehicleActionMessage,  CarServer_VehicleAction_chargingSetLimitAction_tag,             GetChargeState,  0},
-            {SET_SENTRY_SWITCH,                "setSentrySwitch",           VehicleActionMessage,  CarServer_VehicleAction_vehicleControlSetSentryModeAction_tag,  Invalid,         0},
-            {SET_HVAC_SWITCH,                  "setHVACSwitch",             VehicleActionMessage,  CarServer_VehicleAction_hvacAutoAction_tag,                     GetClimateState, 0},
-            {SET_HVAC_STEERING_HEATER_SWITCH,  "setHVACSteeringHeatSwitch", VehicleActionMessage,  CarServer_VehicleAction_hvacSteeringWheelHeaterAction_tag,      Invalid,         0},
-            {SET_OPEN_CHARGE_PORT_DOOR,        "setOpenChargePortDoor",     VehicleActionMessage,  CarServer_VehicleAction_chargePortDoorOpen_tag,                 Invalid,         0},
-            {SET_CLOSE_CHARGE_PORT_DOOR,       "setCloseChargePortDoor",    VehicleActionMessage,  CarServer_VehicleAction_chargePortDoorClose_tag,                Invalid,         0},
-            {SOUND_HORN,                       "soundHorn",                 VehicleActionMessage,  CarServer_VehicleAction_vehicleControlHonkHornAction_tag,       Invalid,         0},
-            {FLASH_LIGHT,                      "flashLight",                VehicleActionMessage,  CarServer_VehicleAction_vehicleControlFlashLightsAction_tag,    Invalid,         0},
-            {SET_WINDOWS_SWITCH,               "setWindowsSwitch",          VehicleActionMessage,  CarServer_VehicleAction_vehicleControlWindowAction_tag,         GetClosureState, 0},
-            {DEFROST_CAR,                      "defrostCar",                VehicleActionMessage,  CarServer_VehicleAction_hvacSetPreconditioningMaxAction_tag,    GetClimateState, 0}
+            DO_NOTHING, // Blank empty entry
+            GET_CHARGE_STATE,
+            GET_CLIMATE_STATE,
+            GET_DRIVE_STATE,
+            GET_LOCATION_STATE,
+            GET_CLOSURES_STATE,
+            GET_TYRES_STATE,
+            SET_CHARGING_SWITCH,
+            SET_CHARGING_AMPS,
+            SET_CHARGING_LIMIT,
+            SET_SENTRY_SWITCH,
+            SET_HVAC_SWITCH,
+            SET_HVAC_STEERING_HEATER_SWITCH,
+            SET_OPEN_CHARGE_PORT_DOOR,
+            SET_CLOSE_CHARGE_PORT_DOOR,
+            SOUND_HORN,
+            FLASH_LIGHT,
+            SET_WINDOWS_SWITCH,
+            DEFROST_CAR,
+            _COUNT  // sentinel value to get count of entries
+        };
+        enum class AllowedMsg // The type of messages to send
+        {
+            VehicleActionMessage,
+            GetVehicleDataMessage,
+            Empty
         };
 
+        enum class GetOnSet
+        /*
+        *   The type of get to do immediately following a set (having this means a new set doesn't need a code change if it uses an existing
+        *   getxxxstate call.
+        */
+        {
+            GetChargeState,
+            GetClimateState,
+            GetDriveState,
+            GetLocationState,
+            GetClosureState,
+            Invalid // Eg a data read, sensor not yet implemented, etc
+        };
+
+        struct ActionMessageDetail
+        /*
+        *   This defines the contents of the rows of the ACTION_SPECIFICS table below. For every localActionDef, this describes the specific
+        *   contents for the message to send to the car. The rows of the table must be in the same order as BLE_CarServer_VehicleAction.
+        *   If a new message is needed, simply add a row to the table with the appropriate contents, no need to edit the code in the .cpp.
+        */
+        {
+            BLE_CarServer_VehicleAction localActionDef;
+            const char* action_str;
+            AllowedMsg whichMsg;
+            int actionTag;
+            GetOnSet getOnSet;
+            int numberUpdatesBetweenGets; // Only used for GetVehicleDataMessage
+        };
+        static constexpr std::array<ActionMessageDetail, 19> ACTION_SPECIFICS
+        {{
+            {BLE_CarServer_VehicleAction::DO_NOTHING,                       "",                          AllowedMsg::Empty,                 0,                                                              GetOnSet::Invalid,         0},
+            {BLE_CarServer_VehicleAction::GET_CHARGE_STATE,                 "getChargeState",            AllowedMsg::GetVehicleDataMessage, CarServer_GetVehicleData_getChargeState_tag,                    GetOnSet::Invalid,         1},
+            {BLE_CarServer_VehicleAction::GET_CLIMATE_STATE,                "getClimateState",           AllowedMsg::GetVehicleDataMessage, CarServer_GetVehicleData_getClimateState_tag,                   GetOnSet::Invalid,         5},
+            {BLE_CarServer_VehicleAction::GET_DRIVE_STATE,                  "getDriveState",             AllowedMsg::GetVehicleDataMessage, CarServer_GetVehicleData_getDriveState_tag,                     GetOnSet::Invalid,         1},
+            {BLE_CarServer_VehicleAction::GET_LOCATION_STATE,               "getLocationState",          AllowedMsg::GetVehicleDataMessage, CarServer_GetVehicleData_getLocationState_tag,                  GetOnSet::Invalid,         10},
+            {BLE_CarServer_VehicleAction::GET_CLOSURES_STATE,               "getClosuresState",          AllowedMsg::GetVehicleDataMessage, CarServer_GetVehicleData_getClosuresState_tag,                  GetOnSet::Invalid,         6},
+            {BLE_CarServer_VehicleAction::GET_TYRES_STATE,                  "getTyresState",             AllowedMsg::GetVehicleDataMessage, CarServer_GetVehicleData_getTirePressureState_tag,              GetOnSet::Invalid,         17},
+            {BLE_CarServer_VehicleAction::SET_CHARGING_SWITCH,              "setChargingSwitch",         AllowedMsg::VehicleActionMessage,  CarServer_VehicleAction_chargingStartStopAction_tag,            GetOnSet::GetChargeState,  0},
+            {BLE_CarServer_VehicleAction::SET_CHARGING_AMPS,                "setChargingAmps",           AllowedMsg::VehicleActionMessage,  CarServer_VehicleAction_setChargingAmpsAction_tag,              GetOnSet::GetChargeState,  0},
+            {BLE_CarServer_VehicleAction::SET_CHARGING_LIMIT,               "setChargingLimit",          AllowedMsg::VehicleActionMessage,  CarServer_VehicleAction_chargingSetLimitAction_tag,             GetOnSet::GetChargeState,  0},
+            {BLE_CarServer_VehicleAction::SET_SENTRY_SWITCH,                "setSentrySwitch",           AllowedMsg::VehicleActionMessage,  CarServer_VehicleAction_vehicleControlSetSentryModeAction_tag,  GetOnSet::Invalid,         0},
+            {BLE_CarServer_VehicleAction::SET_HVAC_SWITCH,                  "setHVACSwitch",             AllowedMsg::VehicleActionMessage,  CarServer_VehicleAction_hvacAutoAction_tag,                     GetOnSet::GetClimateState, 0},
+            {BLE_CarServer_VehicleAction::SET_HVAC_STEERING_HEATER_SWITCH,  "setHVACSteeringHeatSwitch", AllowedMsg::VehicleActionMessage,  CarServer_VehicleAction_hvacSteeringWheelHeaterAction_tag,      GetOnSet::Invalid,         0},
+            {BLE_CarServer_VehicleAction::SET_OPEN_CHARGE_PORT_DOOR,        "setOpenChargePortDoor",     AllowedMsg::VehicleActionMessage,  CarServer_VehicleAction_chargePortDoorOpen_tag,                 GetOnSet::Invalid,         0},
+            {BLE_CarServer_VehicleAction::SET_CLOSE_CHARGE_PORT_DOOR,       "setCloseChargePortDoor",    AllowedMsg::VehicleActionMessage,  CarServer_VehicleAction_chargePortDoorClose_tag,                GetOnSet::Invalid,         0},
+            {BLE_CarServer_VehicleAction::SOUND_HORN,                       "soundHorn",                 AllowedMsg::VehicleActionMessage,  CarServer_VehicleAction_vehicleControlHonkHornAction_tag,       GetOnSet::Invalid,         0},
+            {BLE_CarServer_VehicleAction::FLASH_LIGHT,                      "flashLight",                AllowedMsg::VehicleActionMessage,  CarServer_VehicleAction_vehicleControlFlashLightsAction_tag,    GetOnSet::Invalid,         0},
+            {BLE_CarServer_VehicleAction::SET_WINDOWS_SWITCH,               "setWindowsSwitch",          AllowedMsg::VehicleActionMessage,  CarServer_VehicleAction_vehicleControlWindowAction_tag,         GetOnSet::GetClosureState, 0},
+            {BLE_CarServer_VehicleAction::DEFROST_CAR,                      "defrostCar",                AllowedMsg::VehicleActionMessage,  CarServer_VehicleAction_hvacSetPreconditioningMaxAction_tag,    GetOnSet::GetClimateState, 0}
+        }};
+        static_assert(ACTION_SPECIFICS.size() == static_cast<std::size_t>(BLE_CarServer_VehicleAction::_COUNT), "ACTION_SPECIFICS out of sync with enum");
         static const char *const TAG = "tesla_ble_vehicle";
         static const char *nvs_key_infotainment = "tk_infotainment";
         static const char *nvs_key_vcsec = "tk_vcsec";
@@ -147,7 +148,6 @@ namespace esphome
             WAITING_FOR_RESPONSE,
             WAITING_FOR_GET_POST_SET
         };
-
         struct BLECommand
         {
             UniversalMessage_Domain domain;
@@ -160,10 +160,9 @@ namespace esphome
             uint8_t retry_count = 0;
             int done_times = 0; // Used to count if something has been done and how many times
 
-            BLECommand(UniversalMessage_Domain d, std::function<int()> e, std::string n = "", BLE_CarServer_VehicleAction a = DO_NOTHING)
+            BLECommand(UniversalMessage_Domain d, std::function<int()> e, std::string n = "", BLE_CarServer_VehicleAction a = BLE_CarServer_VehicleAction::DO_NOTHING)
                 : domain(d), execute(e), execute_name(n), action(a), state(BLECommandState::IDLE) {}
         };
-
         struct BLETXChunk
         {
             std::vector<unsigned char> data;
@@ -175,7 +174,6 @@ namespace esphome
             BLETXChunk(std::vector<unsigned char> d, esp_gatt_write_type_t wt, esp_gatt_auth_req_t ar)
                 : data(d), write_type(wt), auth_req(ar) {}
         };
-
         struct BLERXChunk
         {
             std::vector<unsigned char> buffer;
@@ -184,7 +182,6 @@ namespace esphome
             BLERXChunk(std::vector<unsigned char> b)
                 : buffer(b) {}
         };
-
         struct BLEResponse
         {
             // universal message
@@ -193,6 +190,59 @@ namespace esphome
 
             BLEResponse(UniversalMessage_RoutableMessage m)
                 : message(m) {}
+        };
+        typedef enum // connected, disconnected, disconnected and Unknowns have been set
+        {
+            BleConnected,
+            BleDisconnected,
+            BleDisconnectedUnknownsSet
+        } BleConnectedStatus;
+        typedef enum // connected, disconnected, disconnected and Unknowns have been set
+        {
+            NotCharging,
+            ChargingJustStarted,
+            ChargingOngoing
+        } ChargingStatus;
+
+        enum class BinarySensorId : uint8_t {
+            IsAsleep,
+            IsUnlocked,
+            IsUserPresent,
+            IsChargeFlapOpen,
+            IsBootOpen,
+            IsFrunkOpen,
+            IsClimateOn,
+            WindowsState,
+            Count
+        };
+        enum class TextSensorId : uint8_t {
+            ShiftState,
+            DefrostState,
+            ChargingState,
+            ChargePortLatchState,
+            LastUpdate,
+            Count
+        };
+        enum class NumericSensorId : uint8_t {
+            ChargeState,
+            Odometer,
+            ChargeCurrent,
+            ChargeVoltage,
+            ChargePower,
+            MaxSoc,
+            MaxAmps,
+            MinsToLimit,
+            BatteryRange,
+            InternalTemp,
+            ExternalTemp,
+            ChargeEnergyAdded,
+            ChargeDistanceAdded,
+            TpmsFl,
+            TpmsFr,
+            TpmsRl,
+            TpmsRr,
+            BleDisconnectedTime,
+            Count
         };
 
         class TeslaBLEVehicle : public PollingComponent,
@@ -209,9 +259,9 @@ namespace esphome
             int car_wake_time_;
             int last_infotainment_poll_time_;
             int esp32_just_started_ = 0;
-            int car_is_charging_ = 0;
+            int car_is_charging_ = NotCharging;
             bool do_poll_ = false;
-            int ble_disconnected_ = 1; // 0 = connected, 1 = disconnected, 2 = disconnected and Unknowns have been set
+            BleConnectedStatus ble_disconnected_ = BleDisconnected;
             int ble_disconnected_time_;
             int ble_disconnected_min_time_;
             int fast_poll_if_unlocked_ = 1; // != 0 enables fast polling
@@ -221,7 +271,6 @@ namespace esphome
             unsigned char static_message_buffer_[UniversalMessage_RoutableMessage_size];
             //BLETXChunk static_tx_chunk_;
             //BLERXChunk static_rx_chunk_;
-
 
             TeslaBLEVehicle();
             void setup() override;
@@ -253,7 +302,7 @@ namespace esphome
 
             int wakeVehicle(void);
             int lockVehicle (VCSEC_RKEAction_E lock);
-            void placeAtFrontOfQueue (UniversalMessage_Domain domain, std::function<int()> execute, std::string execute_name, BLE_CarServer_VehicleAction action = DO_NOTHING);
+            void placeAtFrontOfQueue (UniversalMessage_Domain domain, std::function<int()> execute, std::string execute_name, BLE_CarServer_VehicleAction action = BLE_CarServer_VehicleAction::DO_NOTHING);
     
             int sendVCSECActionMessage(VCSEC_RKEAction_E action);
             int sendVCSECClosureMoveRequestMessage (int moveWhat, VCSEC_ClosureMoveType_E moveType);
@@ -266,341 +315,109 @@ namespace esphome
             int writeBLE(const unsigned char *message_buffer, size_t message_length,
                          esp_gatt_write_type_t write_type, esp_gatt_auth_req_t auth_req);
 
+            inline const ActionMessageDetail& get_action_detail (BLE_CarServer_VehicleAction action)
+            { // Get the enty in the ACTION_SPECIFICS table corresponding to the action (we can't be sure of the order)
+                return ACTION_SPECIFICS[static_cast<size_t>(action)];
+            }
             // sensors
-            // Sleep state (vehicleSleepStatus)
-            void set_binary_sensor_is_asleep(binary_sensor::BinarySensor *s) { isAsleepSensor = static_cast<binary_sensor::BinarySensor *>(s); }
-            void updateIsAsleep(bool asleep)
-            {
-                isAsleepSensor->publish_state(asleep);
-            }
-            // Door lock (vehicleLockState)
-            void set_binary_sensor_is_unlocked(binary_sensor::BinarySensor *s) { isUnlockedSensor = static_cast<binary_sensor::BinarySensor *>(s); }
-            void updateisUnlocked(bool locked)
-            {
-                isUnlockedSensor->publish_state(locked);
-            }
-            // User presence (userPresence)
-            void set_binary_sensor_is_user_present(binary_sensor::BinarySensor *s) { isUserPresentSensor = static_cast<binary_sensor::BinarySensor *>(s); }
-            void updateIsUserPresent(bool present)
-            {
-                isUserPresentSensor->publish_state(present);
-            }
-            // Charge flap (chargeFlapStatus)
-            void set_binary_sensor_is_charge_flap_open(binary_sensor::BinarySensor *s) { isChargeFlapOpenSensor = static_cast<binary_sensor::BinarySensor *>(s); }
-            void updateIsChargeFlapOpen(bool open)
-            {
-                isChargeFlapOpenSensor->publish_state(open);
-            }
-            void setChargeFlapHasState(bool has_state)
-            {
-                if (has_state)
-                {
-                    isChargeFlapOpenSensor->publish_state (has_state);
-                }
-                else
-                {
-                    isChargeFlapOpenSensor->invalidate_state ();
-                }
-            }
-
             // set sensors to unknown (e.g. when vehicle is disconnected)
             void setSensors(bool has_state) // has_state is an anachronism
             {
-                isAsleepSensor->invalidate_state ();
-                isUnlockedSensor->invalidate_state ();
-                isUserPresentSensor->invalidate_state ();
+                for (auto* s : numeric_sensors_)
+                    if (s) s->publish_state(NAN);
+                for (auto* s : text_sensors_)
+                    if (s) s->publish_state("Unknown");
+                for (auto* s : binary_sensors_)
+                    if (s) s->invalidate_state();
+            }
+            template<typename T, typename V>
+            inline void publish_if (T* sensor, const V& value) {
+                if (sensor) sensor->publish_state (value);
+            }
+            inline void publishSensor (BinarySensorId id, bool value) {
+                publish_if (binary_sensors_[static_cast<size_t>(id)], value);
             }
 
-            void setInfotainmentSensors (bool state) // state is an anachronism
-            {
-                if (!state)
-                {
-                    ChargeStateSensor->publish_state (NAN);
-                    OdometerStateSensor->publish_state (NAN);
-                    ChargeCurrentStateSensor->publish_state (NAN);
-                    ChargeVoltageStateSensor->publish_state (NAN);
-                    ChargePowerStateSensor->publish_state (NAN);
-                    MaxSocStateSensor->publish_state (NAN);
-                    MaxAmpsStateSensor->publish_state (NAN);
-                    MinsToLimitStateSensor->publish_state (NAN);
-                    ShiftStateSensor->publish_state ("Unknown");
-                    DefrostStateSensor->publish_state ("Unknown");
-                    ChargingStateSensor->publish_state ("Unknown");
-                    ChargePortLatchStateSensor->publish_state ("Unknown");
-                    BatteryRangeStateSensor->publish_state (NAN);
-                    isClimateOnSensor->invalidate_state ();
-                    insideTempStateSensor->publish_state (NAN);
-                    outsideTempStateSensor->publish_state (NAN);
-                    ChargeEnergyAddedSensor->publish_state (NAN);
-                    ChargeDistanceAddedSensor->publish_state (NAN);
-                    TpmsPressureFrSensor->publish_state (NAN);
-                    TpmsPressureFlSensor->publish_state (NAN);
-                    TpmsPressureRlSensor->publish_state (NAN);
-                    TpmsPressureRrSensor->publish_state (NAN);
-                    isBootOpenSensor->invalidate_state ();
-                    isFrunkOpenSensor->invalidate_state ();
-                    windowsStateSensor->invalidate_state ();
-                }
-
-            }
-            void setCarBatteryLevel (int battery_level)
-            {
-                ChargeStateSensor->publish_state (battery_level);
-            }
-            void setCarOdometer (int odometer)
-            {
-                OdometerStateSensor->publish_state (odometer);
-            }
-            void setChargeCurrent (int current)
-            {
-                ChargeCurrentStateSensor->publish_state (current);
-            }
-            void setChargeVoltage (int volts)
-            {
-                ChargeVoltageStateSensor->publish_state (volts);
-            }
-            void setChargePower (int power)
-            {
-                ChargePowerStateSensor->publish_state (power);
-            }
-            void setMaxSoc (int max)
-            {
-                MaxSocStateSensor->publish_state (max);
-            }
-            void setMaxAmps (int max)
-            {
-                MaxAmpsStateSensor->publish_state (max);
-            }
-            void setMinsToLimit (int limit)
-            {
-                MinsToLimitStateSensor->publish_state (limit);
-            }
-            void setBatteryRange (float range)
-            {
-                BatteryRangeStateSensor->publish_state (range);
-            }
-            void setCarShiftState (std::string shift_state)
-            {
-                ShiftStateSensor->publish_state (shift_state);
-            }
-            void setDefrostState (std::string defrost_state)
-            {
-                DefrostStateSensor->publish_state (defrost_state);
-            }
-            void setChargePortLatchState (std::string port_state)
-            {
-                ChargePortLatchStateSensor->publish_state (port_state);
-            }
-            void setChargingState (std::string charging_state)
-            {
-                ChargingStateSensor->publish_state (charging_state);
-            }
-            void setLastUpdateState (std::string last_update)
-            {
-                LastUpdateStateSensor->publish_state (last_update);
-            }
-            void setClimateState (bool climate_state)
-            {
-                isClimateOnSensor->publish_state (climate_state);
-            }
-            void setBootState (bool boot_state)
-            {
-                isBootOpenSensor->publish_state (boot_state);
-            }
-            void setFrunkState (bool frunk_state)
-            {
-                isFrunkOpenSensor->publish_state (frunk_state);
-            }
-            void setWindowsState (bool windows_state)
-            {
-                windowsStateSensor->publish_state (windows_state);
-            }
-            void setInsideTemp (float temp)
-            {
-                insideTempStateSensor->publish_state (temp);
-            }
-            void setOutsideTemp (float temp)
-            {
-                outsideTempStateSensor->publish_state (temp);
-            }
-            void setChargeEnergyAdded (float energy)
-            {
-                ChargeEnergyAddedSensor->publish_state (energy);
-            }
-            void setChargeMilesAdded (float dist)
-            {
-                ChargeDistanceAddedSensor->publish_state (dist);
-            }
-            void setTpmsTyrePressureFl (float pressure)
-            {
-                TpmsPressureFlSensor->publish_state (pressure);
-            }
-            void setTpmsTyrePressureFr (float pressure)
-            {
-                TpmsPressureFrSensor->publish_state (pressure);
-            }
-            void setTpmsTyrePressureRl (float pressure)
-            {
-                TpmsPressureRlSensor->publish_state (pressure);
-            }
-            void setTpmsTyrePressureRr (float pressure)
-            {
-                TpmsPressureRrSensor->publish_state (pressure);
+            inline void publishSensor (TextSensorId id, const std::string& value) {
+                publish_if (text_sensors_[static_cast<size_t>(id)], value);
             }
 
-            void set_text_sensor_shift_state (text_sensor::TextSensor *s)
-            {
-                ShiftStateSensor = static_cast<text_sensor::TextSensor *>(s);
+            inline void publishSensor (NumericSensorId id, float value) {
+                publish_if (numeric_sensors_[static_cast<size_t>(id)], value);
             }
-            void set_text_sensor_defrost_state (text_sensor::TextSensor *s)
-            {
-                DefrostStateSensor = static_cast<text_sensor::TextSensor *>(s);
+            void set_binary_sensor (BinarySensorId id, binary_sensor::BinarySensor* s) {
+                binary_sensors_[static_cast<size_t>(id)] = s;
             }
-            void set_text_sensor_charging_state (text_sensor::TextSensor *s)
-            {
-                ChargingStateSensor = static_cast<text_sensor::TextSensor *>(s);
+            void set_text_sensor (TextSensorId id, text_sensor::TextSensor* s) {
+                text_sensors_[static_cast<size_t>(id)] = s;
             }
-            void set_text_sensor_charge_port_latch_state (text_sensor::TextSensor *s)
-            {
-                ChargePortLatchStateSensor = static_cast<text_sensor::TextSensor *>(s);
+            void set_numeric_sensor (NumericSensorId id, sensor::Sensor* s) {
+                numeric_sensors_[static_cast<size_t>(id)] = s;
             }
-            void set_text_sensor_last_update_state (text_sensor::TextSensor *s)
+            inline static constexpr std::pair<int, const char*> SHIFT_MAP[] = {
+                {CarServer_ShiftState_Invalid_tag,  "Invalid"},
+                {CarServer_ShiftState_P_tag,        "P"},
+                {CarServer_ShiftState_R_tag,        "R"},
+                {CarServer_ShiftState_N_tag,        "N"},
+                {CarServer_ShiftState_D_tag,        "D"},
+                {CarServer_ShiftState_SNA_tag,      "SNA"},
+            };
+            std::string lookup_shift_state (int state)
             {
-                LastUpdateStateSensor = static_cast<text_sensor::TextSensor *>(s);
-            }
-            void set_sensor_charge_state (sensor::Sensor *s)
-            {
-                ChargeStateSensor = static_cast<sensor::Sensor *>(s);
-            }
-            void set_sensor_charge_current_state (sensor::Sensor *s)
-            {
-                ChargeCurrentStateSensor = static_cast<sensor::Sensor *>(s);
-            }
-            void set_sensor_charge_voltage_state (sensor::Sensor *s)
-            {
-                ChargeVoltageStateSensor = static_cast<sensor::Sensor *>(s);
-            }
-            void set_sensor_charge_power_state (sensor::Sensor *s)
-            {
-                ChargePowerStateSensor = static_cast<sensor::Sensor *>(s);
-            }
-            void set_sensor_max_soc_state (sensor::Sensor *s)
-            {
-                MaxSocStateSensor = static_cast<sensor::Sensor *>(s);
-            }
-            void set_sensor_max_amps_state (sensor::Sensor *s)
-            {
-                MaxAmpsStateSensor = static_cast<sensor::Sensor *>(s);
-            }
-            void set_sensor_mins_to_limit_state (sensor::Sensor *s)
-            {
-                MinsToLimitStateSensor = static_cast<sensor::Sensor *>(s);
-            }
-            void set_sensor_battery_range_state (sensor::Sensor *s)
-            {
-                BatteryRangeStateSensor = static_cast<sensor::Sensor *>(s);
-            }
-            void set_sensor_odometer_state (sensor::Sensor *s)
-            {
-                OdometerStateSensor = static_cast<sensor::Sensor *>(s);
-            }
-            void set_sensor_charge_energy_added_state (sensor::Sensor *s)
-            {
-                ChargeEnergyAddedSensor = static_cast<sensor::Sensor *>(s);
-            }
-            void set_sensor_charge_distance_added_state (sensor::Sensor *s)
-            {
-                ChargeDistanceAddedSensor = static_cast<sensor::Sensor *>(s);
-            }
-            void set_binary_sensor_is_climate_on (binary_sensor::BinarySensor *s)
-            {
-                isClimateOnSensor = static_cast<binary_sensor::BinarySensor *>(s);
-            }
-            void set_binary_sensor_is_boot_open (binary_sensor::BinarySensor *s)
-            {
-                isBootOpenSensor = static_cast<binary_sensor::BinarySensor *>(s);
-            }
-            void set_binary_sensor_is_frunk_open (binary_sensor::BinarySensor *s)
-            {
-                isFrunkOpenSensor = static_cast<binary_sensor::BinarySensor *>(s);
-            }
-            void set_binary_sensor_windows_state (binary_sensor::BinarySensor *s)
-            {
-                windowsStateSensor = static_cast<binary_sensor::BinarySensor *>(s);
-            }
-            void set_sensor_internal_temp_state (sensor::Sensor *s)
-            {
-                insideTempStateSensor = static_cast<sensor::Sensor *>(s);
-            }
-            void set_sensor_external_temp_state (sensor::Sensor *s)
-            {
-                outsideTempStateSensor = static_cast<sensor::Sensor *>(s);
-            }
-            void set_sensor_tpms_pressure_fl_state (sensor::Sensor *s)
-            {
-                TpmsPressureFlSensor = static_cast<sensor::Sensor *>(s);
-            }
-            void set_sensor_tpms_pressure_fr_state (sensor::Sensor *s)
-            {
-                TpmsPressureFrSensor = static_cast<sensor::Sensor *>(s);
-            }
-            void set_sensor_tpms_pressure_rl_state (sensor::Sensor *s)
-            {
-                TpmsPressureRlSensor = static_cast<sensor::Sensor *>(s);
-            }
-            void set_sensor_tpms_pressure_rr_state (sensor::Sensor *s)
-            {
-                TpmsPressureRrSensor = static_cast<sensor::Sensor *>(s);
-            }
-
-            std::string lookup_shift_state (int shift_state)
-            {
-                switch (shift_state)
+                for (const auto& entry : SHIFT_MAP)
                 {
-                    case CarServer_ShiftState_Invalid_tag:  return ("Invalid");
-                    case CarServer_ShiftState_P_tag:        return ("P");
-                    case CarServer_ShiftState_R_tag:        return ("R");
-                    case CarServer_ShiftState_N_tag:        return ("N");
-                    case CarServer_ShiftState_D_tag:        return ("D");
-                    case CarServer_ShiftState_SNA_tag:      return ("SNA");
+                    if (entry.first == state)
+                        return entry.second;
                 }
-                return ("Shift state look up error");
+                return "Shift state look up error";
             }
-            std::string lookup_defrost_state (int defrost_state)
+            inline static constexpr std::pair<int, const char*> DEFROST_MAP[] = {
+                {CarServer_ClimateState_DefrostMode_Off_tag,    "Off"},
+                {CarServer_ClimateState_DefrostMode_Normal_tag, "Normal"},
+                {CarServer_ClimateState_DefrostMode_Max_tag,    "Max"},
+            };
+            std::string lookup_defrost_state (int state)
             {
-                switch (defrost_state)
+                for (const auto& entry : DEFROST_MAP)
                 {
-                    case CarServer_ClimateState_DefrostMode_Off_tag:       return ("Off");
-                    case CarServer_ClimateState_DefrostMode_Normal_tag:    return ("Normal");
-                    case CarServer_ClimateState_DefrostMode_Max_tag:       return ("Max");
+                    if (entry.first == state)
+                        return entry.second;
                 }
-                return ("Shift state look up error");
+                return "Defrost state look up error";
             }
-            std::string lookup_charging_state (int charging_state)
+            inline static constexpr std::pair<int, const char*> CHARGING_STATE_MAP[] = {
+                {CarServer_ChargeState_ChargingState_Unknown_tag,       "Unknown"},
+                {CarServer_ChargeState_ChargingState_Disconnected_tag,  "Disconnected"},
+                {CarServer_ChargeState_ChargingState_NoPower_tag,       "No Power"},
+                {CarServer_ChargeState_ChargingState_Starting_tag,      "Starting"},
+                {CarServer_ChargeState_ChargingState_Charging_tag,      "Charging"},
+                {CarServer_ChargeState_ChargingState_Complete_tag,      "Complete"},
+                {CarServer_ChargeState_ChargingState_Stopped_tag,       "Stopped"},
+                {CarServer_ChargeState_ChargingState_Calibrating_tag,   "Calibrating"},
+            };
+            std::string lookup_charging_state (int state)
             {
-                switch (charging_state)
+                for (const auto& entry : CHARGING_STATE_MAP)
                 {
-                    case CarServer_ChargeState_ChargingState_Unknown_tag:       return ("Unknown");
-                    case CarServer_ChargeState_ChargingState_Disconnected_tag:  return ("Disconnected");
-                    case CarServer_ChargeState_ChargingState_NoPower_tag:       return ("No Power");
-                    case CarServer_ChargeState_ChargingState_Starting_tag:      return ("Starting");
-                    case CarServer_ChargeState_ChargingState_Charging_tag:      return ("Charging");
-                    case CarServer_ChargeState_ChargingState_Complete_tag:      return ("Complete");
-                    case CarServer_ChargeState_ChargingState_Stopped_tag:       return ("Stopped");
-                    case CarServer_ChargeState_ChargingState_Calibrating_tag:   return ("Calibrating");
+                    if (entry.first == state)
+                        return entry.second;
                 }
-                return ("Charging state look up error");
+                return "Charging state look up error";
             }
-            std::string lookup_charge_port_latch_state (int charge_port_latch_state)
+            inline static constexpr std::pair<int, const char*> CHARGE_PORT_LATCH_STATE_MAP[] = {
+                {CarServer_ChargePortLatchState_SNA_tag,        "SNA"},
+                {CarServer_ChargePortLatchState_Disengaged_tag, "Disengaged"},
+                {CarServer_ChargePortLatchState_Engaged_tag,    "Engaged"},
+                {CarServer_ChargePortLatchState_Blocking_tag,   "Blocking"},
+            };
+            std::string lookup_charge_port_latch_state (int state)
             {
-                switch (charge_port_latch_state)
+                for (const auto& entry : CHARGE_PORT_LATCH_STATE_MAP)
                 {
-                    case CarServer_ChargePortLatchState_SNA_tag:            return ("SNA");
-                    case CarServer_ChargePortLatchState_Disengaged_tag:     return ("Disengaged");
-                    case CarServer_ChargePortLatchState_Engaged_tag:        return ("Engaged");
-                    case CarServer_ChargePortLatchState_Blocking_tag:       return ("Blocking");
+                    if (entry.first == state)
+                        return entry.second;
                 }
-                return ("Charge port latch state look up error");
+                return "Charge port latch state look up error";
             }
 
         protected:
@@ -620,36 +437,11 @@ namespace esphome
             espbt::ESPBTUUID write_uuid_;
 
             // sensors
-            binary_sensor::BinarySensor *isAsleepSensor;
-            binary_sensor::BinarySensor *isUnlockedSensor;
-            binary_sensor::BinarySensor *isUserPresentSensor;
-            binary_sensor::BinarySensor *isChargeFlapOpenSensor;
-            binary_sensor::BinarySensor *isClimateOnSensor;
-            binary_sensor::BinarySensor *isBootOpenSensor;
-            binary_sensor::BinarySensor *isFrunkOpenSensor;
-            binary_sensor::BinarySensor *windowsStateSensor;
-            text_sensor::TextSensor *ShiftStateSensor;
-            text_sensor::TextSensor *DefrostStateSensor;
-            text_sensor::TextSensor *ChargingStateSensor;
-            text_sensor::TextSensor *ChargePortLatchStateSensor;
-            text_sensor::TextSensor *LastUpdateStateSensor;
-            sensor::Sensor *ChargeStateSensor;
-            sensor::Sensor *OdometerStateSensor;
-            sensor::Sensor *ChargeCurrentStateSensor;
-            sensor::Sensor *ChargeVoltageStateSensor;
-            sensor::Sensor *ChargePowerStateSensor;
-            sensor::Sensor *MaxSocStateSensor;
-            sensor::Sensor *MaxAmpsStateSensor;
-            sensor::Sensor *MinsToLimitStateSensor;
-            sensor::Sensor *BatteryRangeStateSensor;
-            sensor::Sensor *outsideTempStateSensor;
-            sensor::Sensor *insideTempStateSensor;
-            sensor::Sensor *ChargeEnergyAddedSensor;
-            sensor::Sensor *ChargeDistanceAddedSensor;
-            sensor::Sensor *TpmsPressureFlSensor;
-            sensor::Sensor *TpmsPressureFrSensor;
-            sensor::Sensor *TpmsPressureRlSensor;
-            sensor::Sensor *TpmsPressureRrSensor;
+            std::array<binary_sensor::BinarySensor*, static_cast<size_t>(BinarySensorId::Count)> binary_sensors_{};
+
+            std::array<text_sensor::TextSensor*, static_cast<size_t>(TextSensorId::Count)> text_sensors_{};
+
+            std::array<sensor::Sensor*, static_cast<size_t>(NumericSensorId::Count)> numeric_sensors_{};
 
             std::vector<unsigned char> ble_read_buffer_;
 
