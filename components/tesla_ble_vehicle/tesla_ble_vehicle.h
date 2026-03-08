@@ -242,6 +242,8 @@ namespace esphome
             TpmsRl,
             TpmsRr,
             BleDisconnectedTime,
+            ChargerPhases,
+            ChargeRate,
             Count
         };
 
