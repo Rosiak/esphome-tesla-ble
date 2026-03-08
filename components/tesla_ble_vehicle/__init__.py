@@ -1,7 +1,7 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import ble_client, binary_sensor, text_sensor, sensor
-from esphome.const import CONF_ID
+from esphome.const import CONF_ID, STATE_CLASS_MEASUREMENT
 from enum import Enum, auto
 from dataclasses import dataclass
 from typing import Dict, Any
@@ -26,10 +26,17 @@ NumericSensorId = tesla_ble_vehicle_ns.enum("NumericSensorId", is_class=True)
 @dataclass
 class SensorSpec:
     type: SensorTypes
-    setter_id: cg.MockObj #
+    setter_id: cg.MockObj
     schema_options: Dict[str, Any]
 
-AUTO_LOAD = ["binary_sensor", "sensor", "text_sensor"]
+#AUTO_LOAD = ["binary_sensor", "sensor", "text_sensor"]
+
+def binary(id, **schema):
+    return SensorSpec(SensorTypes.BINARY, id, schema)
+def numeric(id, **schema):
+    return SensorSpec(SensorTypes.NUMERIC, id, schema)
+def text(id, **schema):
+    return SensorSpec(SensorTypes.TEXT, id, schema)
 
 # Constants
 CONF_VIN = "vin"
@@ -42,161 +49,73 @@ CONF_FAST_POLL_IF_UNLOCKED = "fast_poll_if_unlocked" # if != 0, fast polls are e
 CONF_WAKE_ON_BOOT = "wake_on_boot" # != 0 wakes car on device boot
 
 SENSORS = {
-    "is_asleep": SensorSpec (
-        type =              SensorTypes.BINARY,
-        setter_id =         BinarySensorId.IsAsleep,
-        schema_options =    {"icon": "mdi:sleep"},
-    ),
-    "is_unlocked": SensorSpec (
-        type =              SensorTypes.BINARY,
-        setter_id =         BinarySensorId.IsUnlocked,
-        schema_options =    {"device_class": binary_sensor.DEVICE_CLASS_LOCK},
-    ),
-    "is_user_present": SensorSpec (
-        type =              SensorTypes.BINARY,
-        setter_id =         BinarySensorId.IsUserPresent,
-        schema_options =    {"icon": "mdi:account-check", "device_class": binary_sensor.DEVICE_CLASS_OCCUPANCY},
-    ),
-    "is_charge_flap_open": SensorSpec (
-        type =              SensorTypes.BINARY,
-        setter_id =         BinarySensorId.IsChargeFlapOpen,
-        schema_options =    {"icon": "mdi:ev-plug-tesla", "device_class": binary_sensor.DEVICE_CLASS_DOOR},
-    ),
-    "is_boot_open": SensorSpec (
-        type =              SensorTypes.BINARY,
-        setter_id =         BinarySensorId.IsBootOpen,
-        schema_options =    {"icon": "mdi:car-back", "device_class": binary_sensor.DEVICE_CLASS_DOOR},
-    ),
-    "is_frunk_open": SensorSpec (
-        type =              SensorTypes.BINARY,
-        setter_id =         BinarySensorId.IsFrunkOpen,
-        schema_options =    {"icon": "mdi:car", "device_class": binary_sensor.DEVICE_CLASS_DOOR},
-    ),
-    "charge_state": SensorSpec (
-        type =              SensorTypes.NUMERIC,
-        setter_id =         NumericSensorId.ChargeState,
-        schema_options =    {"icon": "mdi:battery-medium", "device_class": sensor.DEVICE_CLASS_BATTERY, "unit_of_measurement": "%"},
-    ),
-    "odometer": SensorSpec (
-        type =              SensorTypes.NUMERIC,
-        setter_id =         NumericSensorId.Odometer,
-        schema_options =    {"icon": "mdi:counter", "device_class": sensor.DEVICE_CLASS_DISTANCE, "accuracy_decimals": 2, "unit_of_measurement": "mi"},
-    ),
-    "charge_distance_added": SensorSpec (
-        type =              SensorTypes.NUMERIC,
-        setter_id =         NumericSensorId.ChargeDistanceAdded,
-        schema_options =    {"icon": "mdi:map-marker-distance", "device_class": sensor.DEVICE_CLASS_DISTANCE, "accuracy_decimals": 2, "unit_of_measurement": "mi"},
-    ),
-    "charge_energy_added": SensorSpec (
-        type =              SensorTypes.NUMERIC,
-        setter_id =         NumericSensorId.ChargeEnergyAdded,
-        schema_options =    {"icon": "mdi:battery-positive", "device_class": sensor.DEVICE_CLASS_ENERGY_STORAGE, "accuracy_decimals": 2, "unit_of_measurement": "kWh"},
-    ),
-    "charge_current": SensorSpec (
-        type =              SensorTypes.NUMERIC,
-        setter_id =         NumericSensorId.ChargeCurrent,
-        schema_options =    {"icon": "mdi:current-ac", "device_class": sensor.DEVICE_CLASS_CURRENT, "unit_of_measurement": "A"},
-    ),
-    "charge_voltage": SensorSpec (
-        type =              SensorTypes.NUMERIC,
-        setter_id =         NumericSensorId.ChargeVoltage,
-        schema_options =    {"icon": "mdi:flash-triangle", "device_class": sensor.DEVICE_CLASS_VOLTAGE, "unit_of_measurement": "V"},
-    ),
-    "charge_power": SensorSpec (
-        type =              SensorTypes.NUMERIC,
-        setter_id =         NumericSensorId.ChargePower,
-        schema_options =    {"icon": "mdi:lightning-bolt-circle", "device_class": sensor.DEVICE_CLASS_POWER, "unit_of_measurement": "kW"},
-    ),
-    "max_soc": SensorSpec (
-        type =              SensorTypes.NUMERIC,
-        setter_id =         NumericSensorId.MaxSoc,
-        schema_options =    {"icon": "mdi:battery-lock", "device_class": sensor.DEVICE_CLASS_BATTERY, "unit_of_measurement": "%"},
-    ),
-    "max_amps": SensorSpec (
-        type =              SensorTypes.NUMERIC,
-        setter_id =         NumericSensorId.MaxAmps,
-        schema_options =    {"icon": "mdi:current-ac", "device_class": sensor.DEVICE_CLASS_CURRENT, "unit_of_measurement": "A"},
-    ),
-    "mins_to_limit": SensorSpec (
-        type =              SensorTypes.NUMERIC,
-        setter_id =         NumericSensorId.MinsToLimit,
-        schema_options =    {"icon": "mdi:timer-sand", "device_class": sensor.DEVICE_CLASS_DURATION, "unit_of_measurement": "min"},
-    ),
-    "battery_range": SensorSpec (
-        type =              SensorTypes.NUMERIC,
-        setter_id =         NumericSensorId.BatteryRange,
-        schema_options =    {"icon": "mdi:gauge", "device_class": sensor.DEVICE_CLASS_DISTANCE, "accuracy_decimals": 2, "unit_of_measurement": "mi"},
-    ),
-    "internal_temp": SensorSpec (
-        type =              SensorTypes.NUMERIC,
-        setter_id =         NumericSensorId.InternalTemp,
-        schema_options =    {"icon": "mdi:thermometer", "device_class": sensor.DEVICE_CLASS_TEMPERATURE, "accuracy_decimals": 1, "unit_of_measurement": "°C"},
-    ),
-    "external_temp": SensorSpec (
-        type =              SensorTypes.NUMERIC,
-        setter_id =         NumericSensorId.ExternalTemp,
-        schema_options =    {"icon": "mdi:sun-thermometer-outline", "device_class": sensor.DEVICE_CLASS_TEMPERATURE, "accuracy_decimals": 1, "unit_of_measurement": "°C"},
-    ),
-    "tpms_pressure_fl": SensorSpec (
-        type =              SensorTypes.NUMERIC,
-        setter_id =         NumericSensorId.TpmsFl,
-        schema_options =    {"icon": "mdi:tire", "device_class": sensor.DEVICE_CLASS_PRESSURE, "accuracy_decimals": 1, "unit_of_measurement": "bar"},
-    ),
-    "tpms_pressure_fr": SensorSpec (
-        type =              SensorTypes.NUMERIC,
-        setter_id =         NumericSensorId.TpmsFr,
-        schema_options =    {"icon": "mdi:tire", "device_class": sensor.DEVICE_CLASS_PRESSURE, "accuracy_decimals": 1, "unit_of_measurement": "bar"},
-    ),
-    "tpms_pressure_rl": SensorSpec (
-        type =              SensorTypes.NUMERIC,
-        setter_id =         NumericSensorId.TpmsRl,
-        schema_options =    {"icon": "mdi:tire", "device_class": sensor.DEVICE_CLASS_PRESSURE, "accuracy_decimals": 1, "unit_of_measurement": "bar"},
-    ),
-    "tpms_pressure_rr": SensorSpec (
-        type =              SensorTypes.NUMERIC,
-        setter_id =         NumericSensorId.TpmsRr,
-        schema_options =    {"icon": "mdi:tire", "device_class": sensor.DEVICE_CLASS_PRESSURE, "accuracy_decimals": 1, "unit_of_measurement": "bar"},
-    ),
-    "is_climate_on": SensorSpec (
-        type =              SensorTypes.BINARY,
-        setter_id =         BinarySensorId.IsClimateOn,
-        schema_options =    {"icon": "mdi:fan"},
-    ),
-    "windows_state": SensorSpec (
-        type =              SensorTypes.BINARY,
-        setter_id =         BinarySensorId.WindowsState,
-        schema_options =    {"icon": "mdi:car-door", "device_class": binary_sensor.DEVICE_CLASS_WINDOW},
-    ),
-    "shift_state": SensorSpec (
-        type =              SensorTypes.TEXT,
-        setter_id =         TextSensorId.ShiftState,
-        schema_options =    {"icon": "mdi:car-shift-pattern"},
-    ),
-    "defrost_state": SensorSpec ( 
-        type =              SensorTypes.TEXT,
-        setter_id =         TextSensorId.DefrostState,
-        schema_options =    {"icon": "mdi:snowflake-melt"},
-    ),
-    "charging_state": SensorSpec (
-        type =              SensorTypes.TEXT,
-        setter_id =         TextSensorId.ChargingState,
-        schema_options =    {"icon": "mdi:ev-station"},
-    ),
-    "charge_port_latch_state": SensorSpec (
-        type =              SensorTypes.TEXT,
-        setter_id =         TextSensorId.ChargePortLatchState,
-        schema_options =    {"icon": "mdi:battery-lock"},
-    ),
-    "last_update": SensorSpec (
-        type =              SensorTypes.TEXT,
-        setter_id =         TextSensorId.LastUpdate,
-        schema_options =    {"icon": "mdi:update"},
-    ),
-"ble_disconnected_time": SensorSpec (
-    type =              SensorTypes.NUMERIC,
-    setter_id =         NumericSensorId.BleDisconnectedTime,
-    schema_options =    {"icon": "mdi:bluetooth-off", "device_class": sensor.DEVICE_CLASS_DURATION, "unit_of_measurement": "s"},
-),
+    "is_asleep": binary (BinarySensorId.IsAsleep,
+        icon = "mdi:sleep",),
+    "is_unlocked": binary (
+        BinarySensorId.IsUnlocked,
+        device_class = binary_sensor.DEVICE_CLASS_LOCK,),
+    "is_user_present": binary (BinarySensorId.IsUserPresent,
+        icon = "mdi:account-check", device_class = binary_sensor.DEVICE_CLASS_OCCUPANCY,),
+    "is_charge_flap_open": binary (BinarySensorId.IsChargeFlapOpen,
+        icon = "mdi:ev-plug-tesla", device_class = binary_sensor.DEVICE_CLASS_DOOR,),
+    "is_boot_open": binary (BinarySensorId.IsBootOpen,
+        icon = "mdi:car-back", device_class = binary_sensor.DEVICE_CLASS_DOOR,),
+    "is_frunk_open": binary (BinarySensorId.IsFrunkOpen,
+        icon = "mdi:car", device_class = binary_sensor.DEVICE_CLASS_DOOR,),
+    "charge_state": numeric (NumericSensorId.ChargeState,
+        icon = "mdi:battery-medium", device_class = sensor.DEVICE_CLASS_BATTERY, unit_of_measurement = "%",),
+    "odometer": numeric (NumericSensorId.Odometer,
+        icon = "mdi:counter", device_class = sensor.DEVICE_CLASS_DISTANCE, accuracy_decimals = 2, unit_of_measurement = "mi",),
+    "charge_distance_added": numeric (NumericSensorId.ChargeDistanceAdded,
+        icon = "mdi:map-marker-distance", device_class = sensor.DEVICE_CLASS_DISTANCE, accuracy_decimals = 2, unit_of_measurement = "mi",),
+    "charge_energy_added": numeric (NumericSensorId.ChargeEnergyAdded,
+        icon = "mdi:battery-positive", device_class = sensor.DEVICE_CLASS_ENERGY_STORAGE, accuracy_decimals = 2, unit_of_measurement = "kWh",),
+    "charge_current": numeric (NumericSensorId.ChargeCurrent,
+        icon = "mdi:current-ac", device_class = sensor.DEVICE_CLASS_CURRENT, unit_of_measurement = "A",),
+    "charge_voltage": numeric (NumericSensorId.ChargeVoltage,
+        icon = "mdi:flash-triangle", device_class = sensor.DEVICE_CLASS_VOLTAGE, unit_of_measurement = "V",),
+    "charge_power": numeric (NumericSensorId.ChargePower,
+        icon = "mdi:lightning-bolt-circle", device_class = sensor.DEVICE_CLASS_POWER, unit_of_measurement = "kW",),
+    "max_soc": numeric (NumericSensorId.MaxSoc,
+        icon = "mdi:battery-lock", device_class = sensor.DEVICE_CLASS_BATTERY, unit_of_measurement = "%",),
+    "max_amps": numeric (NumericSensorId.MaxAmps,
+        icon = "mdi:current-ac", device_class = sensor.DEVICE_CLASS_CURRENT, unit_of_measurement = "A",),
+    "mins_to_limit": numeric (NumericSensorId.MinsToLimit,
+        icon = "mdi:timer-sand", device_class = sensor.DEVICE_CLASS_DURATION, unit_of_measurement = "min",),
+    "battery_range": numeric (NumericSensorId.BatteryRange,
+        icon = "mdi:gauge", device_class = sensor.DEVICE_CLASS_DISTANCE, accuracy_decimals = 2, unit_of_measurement = "mi",),
+    "internal_temp": numeric (NumericSensorId.InternalTemp,
+        icon = "mdi:thermometer", device_class = sensor.DEVICE_CLASS_TEMPERATURE, accuracy_decimals = 1, unit_of_measurement = "°C",),
+    "external_temp": numeric (NumericSensorId.ExternalTemp,
+        icon = "mdi:sun-thermometer-outline", device_class = sensor.DEVICE_CLASS_TEMPERATURE, accuracy_decimals = 1, unit_of_measurement = "°C",),
+    "tpms_pressure_fl": numeric (NumericSensorId.TpmsFl,
+        icon = "mdi:tire", device_class = sensor.DEVICE_CLASS_PRESSURE, accuracy_decimals = 1, unit_of_measurement = "bar",),
+    "tpms_pressure_fr": numeric (NumericSensorId.TpmsFr,
+        icon = "mdi:tire", device_class = sensor.DEVICE_CLASS_PRESSURE, accuracy_decimals = 1, unit_of_measurement = "bar",),
+    "tpms_pressure_rl": numeric (NumericSensorId.TpmsRl,
+        icon = "mdi:tire", device_class = sensor.DEVICE_CLASS_PRESSURE, accuracy_decimals = 1, unit_of_measurement = "bar",),
+    "tpms_pressure_rr": numeric (NumericSensorId.TpmsRr,
+        icon = "mdi:tire", device_class = sensor.DEVICE_CLASS_PRESSURE, accuracy_decimals = 1, unit_of_measurement = "bar",),
+    "is_climate_on": binary (BinarySensorId.IsClimateOn,
+        icon = "mdi:fan",),
+    "windows_state": binary (BinarySensorId.WindowsState,
+        icon = "mdi:car-door", device_class = binary_sensor.DEVICE_CLASS_WINDOW,),
+    "shift_state": text (TextSensorId.ShiftState,
+        icon = "mdi:car-shift-pattern",),
+    "defrost_state": text (TextSensorId.DefrostState,
+        icon = "mdi:snowflake-melt",),
+    "charging_state": text (TextSensorId.ChargingState,
+        icon = "mdi:ev-station",),
+    "charge_port_latch_state": text (TextSensorId.ChargePortLatchState,
+        icon = "mdi:battery-lock",),
+    "last_update": text (TextSensorId.LastUpdate,
+        icon = "mdi:update",),
+    "ble_disconnected_time": numeric (NumericSensorId.BleDisconnectedTime,
+        icon = "mdi:bluetooth-off", device_class = sensor.DEVICE_CLASS_DURATION, unit_of_measurement = "s",),
+    "charger_phases": numeric (NumericSensorId.ChargerPhases,
+        icon = "mdi:surround-sound-3-1", device_class = "", state_class = STATE_CLASS_MEASUREMENT, accuracy_decimals = 0,),
+    "charge_rate": numeric (NumericSensorId.ChargeRate,
+        icon = "mdi:speedometer", device_class = sensor.DEVICE_CLASS_SPEED, accuracy_decimals = 0, unit_of_measurement = "mph",),
 }
 
 SENSOR_TYPES_INFO = {
