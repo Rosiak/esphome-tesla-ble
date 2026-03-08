@@ -122,6 +122,14 @@ tesla_ble_vehicle:
     name: "BLE disconnected time"
     disabled_by_default: true
     entity_category: diagnostic
+  charger_phases:
+    id: "charger_phases"
+    name: "Charger phases"
+    disabled_by_default: true
+  charge_rate:
+    id: "charge_rate"
+    name: "Charge rate"
+    disabled_by_default: true
 
 button:
   - platform: template
