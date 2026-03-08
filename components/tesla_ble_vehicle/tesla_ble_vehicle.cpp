@@ -527,7 +527,6 @@ namespace esphome
         ESP_LOGD(TAG, "[x] Dropping message with missing source");
         return;
       }
-//      UniversalMessage_Domain domain = read_queue_message_.from_destination.sub_destination.domain;
 
       if ((read_queue_message_.request_uuid.size != 0) && (read_queue_message_.request_uuid.size != 16))
       {
@@ -1813,6 +1812,22 @@ if (ble_disconnected_ != BleConnected) // While disconnected update duration of 
             else
             {
               ESP_LOGI (TAG, "No data to set miles added");
+            }
+            if (carserver_response.response_msg.vehicleData.charge_state.which_optional_charger_phases)
+            {            
+              publishSensor (NumericSensorId::ChargerPhases, carserver_response.response_msg.vehicleData.charge_state.optional_charger_phases.charger_phases);
+            }
+            else
+            {
+              ESP_LOGI (TAG, "No data to set charger phases");
+            }
+            if (carserver_response.response_msg.vehicleData.charge_state.which_optional_charge_rate_mph)
+            {            
+              publishSensor (NumericSensorId::ChargeRate, carserver_response.response_msg.vehicleData.charge_state.optional_charge_rate_mph.charge_rate_mph);
+            }
+            else
+            {
+              ESP_LOGI (TAG, "No data to set charge rate");
             }
             if (carserver_response.response_msg.vehicleData.charge_state.has_charging_state)
             {            
