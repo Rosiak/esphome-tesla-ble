@@ -29,6 +29,7 @@ text_sensor:
     name: "Version"
     icon: mdi:cube-outline
   - platform: wifi_info
+    id: esphome_tesla_ble_wifi_info
     ip_address:
       name: "IP Address"
 
