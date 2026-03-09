@@ -126,6 +126,11 @@ tesla_ble_vehicle:
     id: "charger_phases"
     name: "Charger phases"
     disabled_by_default: true
+    filters:
+      - lambda: |-
+          if (x == 2)
+            return 3;
+          return x;
   charge_rate:
     id: "charge_rate"
     name: "Charge rate"
