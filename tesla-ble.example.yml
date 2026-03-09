@@ -16,6 +16,20 @@ api:
   encryption:
     key: xxxxxxxxxxxxx= # use "key: !secret your_secret_key_name" for greater security
 
+# Uncomment if you want to use ethernet instead
+# See https://esphome.io/components/ethernet/ for actual configuration you will need
+# ethernet:
+#   type: LAN8720
+#   ...
+# wifi: !remove
+# sensor:
+#   - id: !remove esphome_tesla_ble_wifi_signal
+# text_sensor:
+#   - id: !remove esphome_wifi_ip_address
+# esp32_ble_tracker:
+#   scan_parameters:
+#     continuous: true
+
 packages:
   remote_package_files:
     url: https://github.com/PedroKTFC/esphome-tesla-ble/
