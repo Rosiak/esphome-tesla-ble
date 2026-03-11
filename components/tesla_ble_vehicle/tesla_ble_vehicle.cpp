@@ -40,6 +40,7 @@ namespace esphome
       this->read_uuid_ = espbt::ESPBTUUID::from_raw(READ_UUID);
       this->write_uuid_ = espbt::ESPBTUUID::from_raw(WRITE_UUID);
       ble_disconnected_time_ = millis(); // Initialise disconnect time on startup
+      ble_read_buffer_.reserve(MAX_BLE_MESSAGE_SIZE);
 
       this->initializeFlash();
       this->openNVSHandle();
@@ -467,7 +468,7 @@ namespace esphome
         ESP_LOGE(TAG, "BLE RX: Message length (%d) exceeds max BLE message size", buffer_len_post_append);
         // clear buffer
         this->ble_read_buffer_.clear();
-        this->ble_read_buffer_.shrink_to_fit();
+//        this->ble_read_buffer_.shrink_to_fit();
         return;
       }
 
@@ -499,12 +500,13 @@ namespace esphome
       int return_code = tesla_ble_client_->parseUniversalMessageBLE (this->ble_read_buffer_.data(), this->ble_read_buffer_.size(), &read_queue_message_);
       if (return_code != 0)
       {
+        this->ble_read_buffer_.clear();         // This will set the size to 0 
         ESP_LOGW(TAG, "BLE RX: Failed to parse incoming message");
       }
       ESP_LOGD(TAG, "BLE RX: Parsed UniversalMessage");
       // clear read buffer
-      this->ble_read_buffer_.clear();         // This will set the size to 0 and free unused memory
-      this->ble_read_buffer_.shrink_to_fit(); // This will reduce the capacity to fit the size
+      this->ble_read_buffer_.clear();         // This will set the size to 0
+//      this->ble_read_buffer_.shrink_to_fit(); // This will reduce the capacity to fit the size
 
       response_queue_.emplace(read_queue_message_);
       return;
@@ -1610,15 +1612,22 @@ if (ble_disconnected_ != BleConnected) // While disconnected update duration of 
       return 0;
     }
 
-    int TeslaBLEVehicle::handleSessionInfoUpdate(UniversalMessage_RoutableMessage message, UniversalMessage_Domain domain)
+    int TeslaBLEVehicle::handleSessionInfoUpdate(const UniversalMessage_RoutableMessage& message, UniversalMessage_Domain domain)
     {
       ESP_LOGD(TAG, "Received session info response from domain %s", domain_to_string(domain));
 
+      const char* domain_str = domain_to_string(domain);
+      ESP_LOGD(TAG, "Received session info update from domain %s", domain_str);
       auto session = tesla_ble_client_->getPeer(domain);
+      if (!session)
+      {
+        ESP_LOGE(TAG, "No session found for domain %s", domain_str);
+        return -1;
+      }
 
       // parse session info
       Signatures_SessionInfo session_info = Signatures_SessionInfo_init_default;
-      int return_code = tesla_ble_client_->parsePayloadSessionInfo(&message.payload.session_info, &session_info);
+      int return_code = tesla_ble_client_->parsePayloadSessionInfo (const_cast<UniversalMessage_RoutableMessage_session_info_t*>(&message.payload.session_info), &session_info);
       if (return_code != 0)
       {
         ESP_LOGE(TAG, "Failed to parse session info response");
@@ -1648,7 +1657,7 @@ if (ble_disconnected_ != BleConnected) // While disconnected update duration of 
       return_code = nvs_save_session_info(session_info, domain);
       if (return_code != 0)
       {
-        ESP_LOGE(TAG, "Failed to save %s session info to NVS", domain_to_string(domain));
+        ESP_LOGE(TAG, "Failed to save %s session info to NVS", domain_str);
       }
 
       if (!command_queue_.empty())
@@ -1676,7 +1685,7 @@ if (ble_disconnected_ != BleConnected) // While disconnected update duration of 
             return 0;
           }
         }
-        else if (domain == UniversalMessage_Domain_DOMAIN_INFOTAINMENT && current_command.state == BLECommandState::WAITING_FOR_INFOTAINMENT_AUTH_RESPONSE)
+        else if ((domain == UniversalMessage_Domain_DOMAIN_INFOTAINMENT) && (current_command.state == BLECommandState::WAITING_FOR_INFOTAINMENT_AUTH_RESPONSE))
         {
           ESP_LOGV(TAG, "[%s] INFOTAINMENT authenticated, ready to execute", current_command.execute_name.c_str());
           current_command.state = BLECommandState::READY;
@@ -1720,7 +1729,7 @@ if (ble_disconnected_ != BleConnected) // While disconnected update duration of 
       }
     }
     
-    int TeslaBLEVehicle::handleInfoCarServerResponse (CarServer_Response carserver_response)
+    int TeslaBLEVehicle::handleInfoCarServerResponse (const CarServer_Response& carserver_response)
     {
       switch (carserver_response.which_response_msg)
       {
