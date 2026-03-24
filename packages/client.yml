@@ -117,6 +117,24 @@ tesla_ble_vehicle:
     id: "tpms_pressure_rr"
     name: "Tyre pressure rear right"
     disabled_by_default: true
+  ble_disconnected_time:
+    id: "ble_disconnected_time"
+    name: "BLE disconnected time"
+    disabled_by_default: true
+    entity_category: diagnostic
+  charger_phases:
+    id: "charger_phases"
+    name: "Charger phases"
+    disabled_by_default: true
+    filters:
+      - lambda: |-
+          if (x == 2)
+            return 3;
+          return x;
+  charge_rate:
+    id: "charge_rate"
+    name: "Charge rate"
+    disabled_by_default: true
 
 button:
   - platform: template
@@ -139,14 +157,14 @@ button:
     name: Flash light
     icon: mdi:car-light-high
     on_press:
-      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (FLASH_LIGHT, 0);
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (tesla_ble_vehicle::BLE_CarServer_VehicleAction::FLASH_LIGHT, 0);
 
   - platform: template
     id: btn_sound_horn
     name: Sound horn
     icon: mdi:bugle
     on_press:
-      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (SOUND_HORN, 0);
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (tesla_ble_vehicle::BLE_CarServer_VehicleAction::SOUND_HORN, 0);
 
   - platform: template
     id: btn_unlock_charge_port
@@ -204,9 +222,9 @@ switch:
         return false;
       }
     turn_on_action:
-      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_CHARGING_SWITCH, 1);
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(tesla_ble_vehicle::BLE_CarServer_VehicleAction::SET_CHARGING_SWITCH, 1);
     turn_off_action:
-      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_CHARGING_SWITCH, 0);
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(tesla_ble_vehicle::BLE_CarServer_VehicleAction::SET_CHARGING_SWITCH, 0);
 
   - platform: template
     id: sw_sentry_mode
@@ -216,9 +234,9 @@ switch:
     assumed_state: true # we can't read the state 
     restore_mode: RESTORE_DEFAULT_OFF
     turn_on_action:
-      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_SENTRY_SWITCH, 1);
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(tesla_ble_vehicle::BLE_CarServer_VehicleAction::SET_SENTRY_SWITCH, 1);
     turn_off_action:
-      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_SENTRY_SWITCH, 0);
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(tesla_ble_vehicle::BLE_CarServer_VehicleAction::SET_SENTRY_SWITCH, 0);
   
   - platform: template
     id: sw_climate
@@ -233,9 +251,9 @@ switch:
       }
     restore_mode: RESTORE_DEFAULT_OFF
     turn_on_action:
-      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_HVAC_SWITCH, 1);
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(tesla_ble_vehicle::BLE_CarServer_VehicleAction::SET_HVAC_SWITCH, 1);
     turn_off_action:
-      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_HVAC_SWITCH, 0);
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(tesla_ble_vehicle::BLE_CarServer_VehicleAction::SET_HVAC_SWITCH, 0);
 
   - platform: template
     id: sw_steering_wheel_heat
@@ -245,9 +263,9 @@ switch:
     assumed_state: true # we can't read the state 
     restore_mode: RESTORE_DEFAULT_OFF
     turn_on_action:
-      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_HVAC_STEERING_HEATER_SWITCH, 1);
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(tesla_ble_vehicle::BLE_CarServer_VehicleAction::SET_HVAC_STEERING_HEATER_SWITCH, 1);
     turn_off_action:
-      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_HVAC_STEERING_HEATER_SWITCH, 0);
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(tesla_ble_vehicle::BLE_CarServer_VehicleAction::SET_HVAC_STEERING_HEATER_SWITCH, 0);
   
   - platform: template
     id: sw_defrost_car
@@ -261,9 +279,9 @@ switch:
         return false;
       }
     turn_on_action:
-      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (DEFROST_CAR, 1);
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (tesla_ble_vehicle::BLE_CarServer_VehicleAction::DEFROST_CAR, 1);
     turn_off_action:
-      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (DEFROST_CAR, 0);
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (tesla_ble_vehicle::BLE_CarServer_VehicleAction::DEFROST_CAR, 0);
 
   - platform: template
     id: fast_poll_if_unlocked
@@ -339,10 +357,10 @@ cover:
       }
     close_action: #### This way round to make the arrows follow the desired window motion
       - lambda: |-
-          id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (SET_WINDOWS_SWITCH, 0);
+          id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (tesla_ble_vehicle::BLE_CarServer_VehicleAction::SET_WINDOWS_SWITCH, 0);
     open_action:
       - lambda: |-
-          id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (SET_WINDOWS_SWITCH, 1);
+          id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (tesla_ble_vehicle::BLE_CarServer_VehicleAction::SET_WINDOWS_SWITCH, 1);
 
   - platform: template
     id: cov_charge_port
@@ -358,9 +376,9 @@ cover:
       }
 #    restore_mode: RESTORE_DEFAULT_OFF
     open_action:
-      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_OPEN_CHARGE_PORT_DOOR,1);
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(tesla_ble_vehicle::BLE_CarServer_VehicleAction::SET_OPEN_CHARGE_PORT_DOOR,1);
     close_action:
-      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_CLOSE_CHARGE_PORT_DOOR,1);
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(tesla_ble_vehicle::BLE_CarServer_VehicleAction::SET_CLOSE_CHARGE_PORT_DOOR,1);
   
   - platform: template
     id: cov_boot
@@ -410,7 +428,7 @@ number:
     set_action:
       - lambda: |-
           int var_x = static_cast<int>(x);
-          id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_CHARGING_AMPS, var_x);
+          id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(tesla_ble_vehicle::BLE_CarServer_VehicleAction::SET_CHARGING_AMPS, var_x);
     lambda: |-
       if (id(max_amps).has_state())
       {
@@ -430,7 +448,7 @@ number:
     set_action:
       - lambda: |-
           int var_x = static_cast<int>(x);
-          id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(SET_CHARGING_LIMIT, var_x);
+          id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(tesla_ble_vehicle::BLE_CarServer_VehicleAction::SET_CHARGING_LIMIT, var_x);
     lambda: |-
       if (id(max_soc).has_state())
       {

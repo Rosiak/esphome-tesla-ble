@@ -28,9 +28,24 @@ text_sensor:
     id: esphome_tesla_ble_version
     name: "Version"
     icon: mdi:cube-outline
-  - platform: wifi_info
-    ip_address:
-      name: "IP Address"
+  - platform: template
+    id: esphome_tesla_ble_ip_address
+    name: "IP Address"
+    entity_category: "diagnostic"
+    icon: mdi:network
+    lambda: |-
+      auto addrs = network::get_ip_addresses();
+      if (addrs.empty()) return {"0.0.0.0"};
+      char buf[network::IP_ADDRESS_BUFFER_SIZE];
+      addrs[0].str_to(buf);
+      return {std::string(buf)};
+    update_interval: never
+esphome:
+  on_boot:
+    priority: -10
+    then:
+      - delay: 15s
+      - component.update: esphome_tesla_ble_ip_address
 
 time:
   - platform: homeassistant

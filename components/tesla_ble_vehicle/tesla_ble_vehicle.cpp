@@ -26,7 +26,7 @@ namespace esphome
     void TeslaBLEVehicle::dump_config()
     {
       ESP_LOGCONFIG(TAG, "Tesla BLE Vehicle:");
-      LOG_BINARY_SENSOR("  ", "Asleep Sensor", this->isAsleepSensor);
+      LOG_BINARY_SENSOR("  ", "Asleep Sensor", binary_sensors_[static_cast<size_t>(BinarySensorId::IsAsleep)]);
     }
     TeslaBLEVehicle::TeslaBLEVehicle() : tesla_ble_client_(new TeslaBLE::Client{})
     {
@@ -40,6 +40,7 @@ namespace esphome
       this->read_uuid_ = espbt::ESPBTUUID::from_raw(READ_UUID);
       this->write_uuid_ = espbt::ESPBTUUID::from_raw(WRITE_UUID);
       ble_disconnected_time_ = millis(); // Initialise disconnect time on startup
+      ble_read_buffer_.reserve(MAX_BLE_MESSAGE_SIZE);
 
       this->initializeFlash();
       this->openNVSHandle();
@@ -104,7 +105,7 @@ namespace esphome
       // Overall timeout check
       if ((now - current_command.started_at) > COMMAND_TIMEOUT)
       {
-        ESP_LOGE(TAG, "[%s] Command timed out after %d ms with %d commands in the queue", current_command.execute_name.c_str(), COMMAND_TIMEOUT, command_queue_.size());
+        ESP_LOGW(TAG, "[%s] Command timed out after %d ms with %d commands in the queue", current_command.execute_name.c_str(), COMMAND_TIMEOUT, command_queue_.size());
         command_queue_.pop();
         return;
       }
@@ -116,7 +117,7 @@ namespace esphome
          * If the car is asleep and the command is an Infotainment data request (identified by a "get" in the execute_name
          * field), then ignore the request as we don't want to risk waking the car.
         */
-        if (this->isAsleepSensor->state && (current_command.execute_name.find("get") == 0))
+        if (binary_sensors_[static_cast<size_t>(BinarySensorId::IsAsleep)]->state && (current_command.execute_name.find("get") == 0))
         {
           ESP_LOGI(TAG, "[%s] Car is asleep, don't wake for a 'get' command", current_command.execute_name.c_str());
           command_queue_.pop();
@@ -197,7 +198,7 @@ namespace esphome
       case BLECommandState::WAITING_FOR_INFOTAINMENT_AUTH:
         if (now - current_command.last_tx_at > MAX_LATENCY)
         {
-          if (!this->isAsleepSensor->state == false)
+          if (!binary_sensors_[static_cast<size_t>(BinarySensorId::IsAsleep)]->state == false)
           {
             ESP_LOGW(TAG, "[%s] Car is asleep, initiating wake..", current_command.execute_name.c_str());
             current_command.state = BLECommandState::WAITING_FOR_WAKE;
@@ -262,7 +263,7 @@ namespace esphome
       case BLECommandState::WAITING_FOR_WAKE_RESPONSE:
         if ((now - current_command.last_tx_at) > MAX_LATENCY)
         {
-          if (this->isAsleepSensor->state == false)
+          if (binary_sensors_[static_cast<size_t>(BinarySensorId::IsAsleep)]->state == false)
           {
             if (strcmp(current_command.execute_name.c_str(), "wake vehicle") == 0) {
               ESP_LOGD(TAG, "[%s] Vehicle is awake, command completed", current_command.execute_name.c_str());
@@ -316,8 +317,8 @@ namespace esphome
         *   to respond to the last info request (which is sent after a short delay from sending the (un)lock command), try sending
         *   the (un)lock command again.
         */
-        if (((this->isUnlockedSensor->state == true) and (strcmp(current_command.execute_name.c_str(), "unlock vehicle") == 0)) or
-            ((this->isUnlockedSensor->state == false) and (strcmp(current_command.execute_name.c_str(), "lock vehicle") == 0)))
+        if (((binary_sensors_[static_cast<size_t>(BinarySensorId::IsUnlocked)]->state == true) and (strcmp(current_command.execute_name.c_str(), "unlock vehicle") == 0)) or
+            ((binary_sensors_[static_cast<size_t>(BinarySensorId::IsUnlocked)]->state == false) and (strcmp(current_command.execute_name.c_str(), "lock vehicle") == 0)))
         {
           ESP_LOGI (TAG, "[%s] Vehicle is (un)locked as required so command completed", current_command.execute_name.c_str());
           command_queue_.pop();
@@ -402,20 +403,21 @@ namespace esphome
         */
         if ((now - current_command.last_tx_at) > RX_TIMEOUT)
         {
-          ESP_LOGI (TAG, "[%s] Action message waiting before sending get %d", current_command.execute_name.c_str(), ACTION_SPECIFICS[current_command.action].getOnSet);
-          switch (ACTION_SPECIFICS[current_command.action].getOnSet)
+          auto& detail = get_action_detail(current_command.action);
+          ESP_LOGI (TAG, "[%s] Action message waiting before sending get %d", current_command.execute_name.c_str(), static_cast<int>(detail.getOnSet));
+          switch (detail.getOnSet)
           {
-            case GetChargeState:
-              sendCarServerVehicleActionMessage (GET_CHARGE_STATE, 0);
+            case GetOnSet::GetChargeState:
+              sendCarServerVehicleActionMessage (BLE_CarServer_VehicleAction::GET_CHARGE_STATE, 0);
               break;
-            case GetClimateState:
-              sendCarServerVehicleActionMessage (GET_CLIMATE_STATE, 0);
+            case GetOnSet::GetClimateState:
+              sendCarServerVehicleActionMessage (BLE_CarServer_VehicleAction::GET_CLIMATE_STATE, 0);
               break;
-            case GetDriveState:
-              sendCarServerVehicleActionMessage (GET_DRIVE_STATE, 0);
+            case GetOnSet::GetDriveState:
+              sendCarServerVehicleActionMessage (BLE_CarServer_VehicleAction::GET_DRIVE_STATE, 0);
               break;
-            case GetClosureState:
-              sendCarServerVehicleActionMessage (GET_CLOSURES_STATE, 0);
+            case GetOnSet::GetClosureState:
+              sendCarServerVehicleActionMessage (BLE_CarServer_VehicleAction::GET_CLOSURES_STATE, 0);
               break;
             default:
               break; // do nothing
@@ -466,7 +468,7 @@ namespace esphome
         ESP_LOGE(TAG, "BLE RX: Message length (%d) exceeds max BLE message size", buffer_len_post_append);
         // clear buffer
         this->ble_read_buffer_.clear();
-        this->ble_read_buffer_.shrink_to_fit();
+//        this->ble_read_buffer_.shrink_to_fit();
         return;
       }
 
@@ -498,12 +500,13 @@ namespace esphome
       int return_code = tesla_ble_client_->parseUniversalMessageBLE (this->ble_read_buffer_.data(), this->ble_read_buffer_.size(), &read_queue_message_);
       if (return_code != 0)
       {
+        this->ble_read_buffer_.clear();         // This will set the size to 0 
         ESP_LOGW(TAG, "BLE RX: Failed to parse incoming message");
       }
       ESP_LOGD(TAG, "BLE RX: Parsed UniversalMessage");
       // clear read buffer
-      this->ble_read_buffer_.clear();         // This will set the size to 0 and free unused memory
-      this->ble_read_buffer_.shrink_to_fit(); // This will reduce the capacity to fit the size
+      this->ble_read_buffer_.clear();         // This will set the size to 0
+//      this->ble_read_buffer_.shrink_to_fit(); // This will reduce the capacity to fit the size
 
       response_queue_.emplace(read_queue_message_);
       return;
@@ -516,7 +519,7 @@ namespace esphome
         return;
       }
 
-      read_queue_message_ = response_queue_.front().message;
+      read_queue_message_ = response_queue_.front().message; //response.message;
       response_queue_.pop();
 
       //log_routable_message (TAG, &message);
@@ -526,7 +529,6 @@ namespace esphome
         ESP_LOGD(TAG, "[x] Dropping message with missing source");
         return;
       }
-//      UniversalMessage_Domain domain = read_queue_message_.from_destination.sub_destination.domain;
 
       if ((read_queue_message_.request_uuid.size != 0) && (read_queue_message_.request_uuid.size != 16))
       {
@@ -822,7 +824,7 @@ namespace esphome
                   *   If command was an action message, then set to request an update for its associated data (not immediately
                   *   in order to give time for the command to complete)
                   */
-                  if (ACTION_SPECIFICS[current_command.action].whichMsg == VehicleActionMessage)
+                  if (get_action_detail(current_command.action).whichMsg == AllowedMsg::VehicleActionMessage)
                   {
                     current_command.state = BLECommandState::WAITING_FOR_GET_POST_SET;
                   }
@@ -923,14 +925,18 @@ namespace esphome
       */
       if (ble_disconnected_min_time_ != 0)
       { // Only delay setting to Unknown if not zero
-        if ((ble_disconnected_ == 1) and ((millis() - ble_disconnected_time_) > ble_disconnected_min_time_))
+        if ((ble_disconnected_ == BleDisconnected) and ((millis() - ble_disconnected_time_) > ble_disconnected_min_time_))
         { // Only make sensors Unknown if ble disconnected continuously for the configured time
           this->setSensors(false);
-          this->setInfotainmentSensors (false);
-          this->setChargeFlapHasState(false);
-          ble_disconnected_ = 2;
+          ble_disconnected_ = BleDisconnectedUnknownsSet;
         }
       }
+
+if (ble_disconnected_ != BleConnected) // While disconnected update duration of disconnection
+{
+  publishSensor (NumericSensorId::BleDisconnectedTime, (millis() - ble_disconnected_time_) / 1000);
+}
+
       if (this->node_state == espbt::ClientState::ESTABLISHED)
       {
         ESP_LOGD(TAG, "Querying vehicle status update..");
@@ -972,32 +978,32 @@ namespace esphome
           esp32_just_started_++;
         // Beyond 2 this is no longer relevant
         }
-        if (!this->isAsleepSensor->state and previous_asleep_state_) // Remember, true means asleep
+        if (!binary_sensors_[static_cast<size_t>(BinarySensorId::IsAsleep)]->state and previous_asleep_state_) // Remember, true means asleep
         {
           // Car has just woken, also record time it happened so can time out after configured time
           car_just_woken_ = 1;
           car_wake_time_ = millis();
         }
-        if (this->isAsleepSensor->state and !previous_asleep_state_) // Car has just gone to sleep
+        if (binary_sensors_[static_cast<size_t>(BinarySensorId::IsAsleep)]->state and !previous_asleep_state_) // Car has just gone to sleep
         { // Belt & braces clear poll triggers if car is asleep
-          car_is_charging_ = 0;
+          car_is_charging_ = NotCharging;
         }
-        previous_asleep_state_ = this->isAsleepSensor->state;
+        previous_asleep_state_ = binary_sensors_[static_cast<size_t>(BinarySensorId::IsAsleep)]->state;
 
         ESP_LOGI (TAG, "Reading INFOTAINMENT, previous_asleep_state_=%d, car_just_woken_=%d, car_is_charging_=%d, Unlocked=%d, User=%d, fast_poll_if_unlocked_=%d",
-                  previous_asleep_state_, car_just_woken_, car_is_charging_, this->isUnlockedSensor->state, this->isUserPresentSensor->state, fast_poll_if_unlocked_);
+                  previous_asleep_state_, car_just_woken_, car_is_charging_, binary_sensors_[static_cast<size_t>(BinarySensorId::IsUnlocked)]->state, binary_sensors_[static_cast<size_t>(BinarySensorId::IsUserPresent)]->state, fast_poll_if_unlocked_);
         
-        //if (car_just_woken_ or OneOffUpdate or car_is_charging_ or this->isUnlockedSensor->state or this->isUserPresentSensor->state)
-        if (one_off_update_ or (this->isUnlockedSensor->state and (fast_poll_if_unlocked_ > 0)) or this->isUserPresentSensor->state)
+        //if (car_just_woken_ or OneOffUpdate or car_is_charging_ or this->is_unlocked_->state or this->is_user_present_->state)
+        if (one_off_update_ or (binary_sensors_[static_cast<size_t>(BinarySensorId::IsUnlocked)]->state and (fast_poll_if_unlocked_ > 0)) or binary_sensors_[static_cast<size_t>(BinarySensorId::IsUserPresent)]->state)
         { // For these fastest poll rate is used
           do_poll_ = true;
         }
-        else if (car_is_charging_ != 0)
+        else if (car_is_charging_ != NotCharging)
         { // otherwise charging polls have priority
-          if (car_is_charging_ == 1)
+          if (car_is_charging_ == ChargingJustStarted)
           { // Do a poll as soon as notice car is charging
             do_poll_ = true;
-            car_is_charging_ = 2;
+            car_is_charging_ = ChargingOngoing;
           }
           else if (((millis() - last_infotainment_poll_time_) > poll_charging_period_))
           { // subsequent polls on the configured repeat period
@@ -1027,16 +1033,16 @@ namespace esphome
         {
           // Start retrieval of data from car. Each data type has its own frequency.
           last_infotainment_poll_time_ = millis();
-          if ((number_updates_since_connection_ % ACTION_SPECIFICS[GET_CHARGE_STATE].numberUpdatesBetweenGets) == 0)
-              sendCarServerVehicleActionMessage (GET_CHARGE_STATE, 0);
-          if ((number_updates_since_connection_ % ACTION_SPECIFICS[GET_DRIVE_STATE].numberUpdatesBetweenGets) == 0)
-            sendCarServerVehicleActionMessage (GET_DRIVE_STATE, 0);
-          if ((number_updates_since_connection_ % ACTION_SPECIFICS[GET_CLIMATE_STATE].numberUpdatesBetweenGets) == 0)
-            sendCarServerVehicleActionMessage (GET_CLIMATE_STATE, 0);
-          if ((number_updates_since_connection_ % ACTION_SPECIFICS[GET_CLOSURES_STATE].numberUpdatesBetweenGets) == 0)
-            sendCarServerVehicleActionMessage (GET_CLOSURES_STATE, 0);
-          if ((number_updates_since_connection_ % ACTION_SPECIFICS[GET_TYRES_STATE].numberUpdatesBetweenGets) == 0)
-            sendCarServerVehicleActionMessage (GET_TYRES_STATE, 0);
+          if ((number_updates_since_connection_ % get_action_detail(BLE_CarServer_VehicleAction::GET_CHARGE_STATE).numberUpdatesBetweenGets) == 0)
+              sendCarServerVehicleActionMessage (BLE_CarServer_VehicleAction::GET_CHARGE_STATE, 0);
+          if ((number_updates_since_connection_ % get_action_detail(BLE_CarServer_VehicleAction::GET_DRIVE_STATE).numberUpdatesBetweenGets) == 0)
+            sendCarServerVehicleActionMessage (BLE_CarServer_VehicleAction::GET_DRIVE_STATE, 0);
+          if ((number_updates_since_connection_ % get_action_detail(BLE_CarServer_VehicleAction::GET_CLIMATE_STATE).numberUpdatesBetweenGets) == 0)
+            sendCarServerVehicleActionMessage (BLE_CarServer_VehicleAction::GET_CLIMATE_STATE, 0);
+          if ((number_updates_since_connection_ % get_action_detail(BLE_CarServer_VehicleAction::GET_CLOSURES_STATE).numberUpdatesBetweenGets) == 0)
+            sendCarServerVehicleActionMessage (BLE_CarServer_VehicleAction::GET_CLOSURES_STATE, 0);
+          if ((number_updates_since_connection_ % get_action_detail(BLE_CarServer_VehicleAction::GET_TYRES_STATE).numberUpdatesBetweenGets) == 0)
+            sendCarServerVehicleActionMessage (BLE_CarServer_VehicleAction::GET_TYRES_STATE, 0);
           if ((car_just_woken_ != 0) and ((millis() - car_wake_time_) > post_wake_poll_time_))
           {
             car_just_woken_ = 0;
@@ -1425,7 +1431,7 @@ namespace esphome
     int TeslaBLEVehicle::wakeVehicle()
     {
       ESP_LOGI(TAG, "Waking vehicle");
-      if (this->isAsleepSensor->state == false)
+      if (binary_sensors_[static_cast<size_t>(BinarySensorId::IsAsleep)]->state == false)
       {
         ESP_LOGI(TAG, "Vehicle is already awake");
         return 0;
@@ -1540,9 +1546,9 @@ namespace esphome
     *   Causes the appropriate message to be built using the ACTION_SPECIFICS table.
     */
     {
-      if (ACTION_SPECIFICS[action].localActionDef != action)
+      if (get_action_detail(action).localActionDef != action)
       {
-        ESP_LOGE (TAG, "[%s] Action requested %d not that in specifics %d", ACTION_SPECIFICS[action].action_str.c_str(), action, ACTION_SPECIFICS[action].localActionDef);
+        ESP_LOGE (TAG, "[%s] Action requested %d not that in specifics %d", get_action_detail(action).action_str, action, get_action_detail(action).localActionDef);
         return 1;
       }
       /*
@@ -1550,7 +1556,7 @@ namespace esphome
       *   might be in progress so it needs to be just behind that).
       */
       std::string action_str;
-      action_str = ACTION_SPECIFICS[action].action_str;
+      action_str = get_action_detail(action).action_str;
       std::function<int()> execute_cmd;
       execute_cmd = [this, action, action_str, param]()
         {
@@ -1558,18 +1564,18 @@ namespace esphome
           int return_code = 0;
           ESP_LOGI(TAG, "[%s] Building message..", action_str.c_str());
           //if (ACTION_SPECIFICS[action].whichMsg == GetVehicleDataMessage)
-          switch (ACTION_SPECIFICS[action].whichMsg)
+          switch (get_action_detail(action).whichMsg)
           {
-            case GetVehicleDataMessage:
+            case AllowedMsg::GetVehicleDataMessage:
             // Need to create a get vehicle data message
-              return_code = tesla_ble_client_->buildCarServerGetVehicleDataMessage (static_message_buffer_, &message_length, ACTION_SPECIFICS[action].actionTag);
+              return_code = tesla_ble_client_->buildCarServerGetVehicleDataMessage (static_message_buffer_, &message_length, get_action_detail(action).actionTag);
               break;
-            case VehicleActionMessage:
+            case AllowedMsg::VehicleActionMessage:
             // Need to create a vehicle action message
-              return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (static_cast<int32_t>(param), static_message_buffer_, &message_length, ACTION_SPECIFICS[action].actionTag);
-              if ((action == SET_CHARGING_SWITCH) and (param == 1))
+              return_code = tesla_ble_client_->buildCarServerVehicleActionMessage (static_cast<int32_t>(param), static_message_buffer_, &message_length, get_action_detail(action).actionTag);
+              if ((action == BLE_CarServer_VehicleAction::SET_CHARGING_SWITCH) and (param == 1))
               { // If charging has been requested, enable continuous polling
-                car_is_charging_ = true;
+                car_is_charging_ = ChargingJustStarted; //true;
               }
               break;
             default:
@@ -1595,7 +1601,7 @@ namespace esphome
           return 0;
         };
         ESP_LOGI(TAG, "[%s] Adding command to queue (param=%d)", action_str.c_str(), static_cast<int>(param));
-      if (ACTION_SPECIFICS[action].whichMsg == VehicleActionMessage)
+      if (get_action_detail(action).whichMsg == AllowedMsg::VehicleActionMessage)
       {
         placeAtFrontOfQueue (UniversalMessage_Domain_DOMAIN_INFOTAINMENT, execute_cmd, action_str, action);
       }
@@ -1606,16 +1612,22 @@ namespace esphome
       return 0;
     }
 
-    int TeslaBLEVehicle::handleSessionInfoUpdate(UniversalMessage_RoutableMessage message, UniversalMessage_Domain domain)
+    int TeslaBLEVehicle::handleSessionInfoUpdate(const UniversalMessage_RoutableMessage& message, UniversalMessage_Domain domain)
     {
       ESP_LOGD(TAG, "Received session info response from domain %s", domain_to_string(domain));
 
+      const char* domain_str = domain_to_string(domain);
+      ESP_LOGD(TAG, "Received session info update from domain %s", domain_str);
       auto session = tesla_ble_client_->getPeer(domain);
+      if (!session)
+      {
+        ESP_LOGE(TAG, "No session found for domain %s", domain_str);
+        return -1;
+      }
 
       // parse session info
-      UniversalMessage_RoutableMessage_session_info_t sessionInfo = message.payload.session_info;
       Signatures_SessionInfo session_info = Signatures_SessionInfo_init_default;
-      int return_code = tesla_ble_client_->parsePayloadSessionInfo(&message.payload.session_info, &session_info);
+      int return_code = tesla_ble_client_->parsePayloadSessionInfo (const_cast<UniversalMessage_RoutableMessage_session_info_t*>(&message.payload.session_info), &session_info);
       if (return_code != 0)
       {
         ESP_LOGE(TAG, "Failed to parse session info response");
@@ -1645,7 +1657,7 @@ namespace esphome
       return_code = nvs_save_session_info(session_info, domain);
       if (return_code != 0)
       {
-        ESP_LOGE(TAG, "Failed to save %s session info to NVS", domain_to_string(domain));
+        ESP_LOGE(TAG, "Failed to save %s session info to NVS", domain_str);
       }
 
       if (!command_queue_.empty())
@@ -1673,7 +1685,7 @@ namespace esphome
             return 0;
           }
         }
-        else if (domain == UniversalMessage_Domain_DOMAIN_INFOTAINMENT && current_command.state == BLECommandState::WAITING_FOR_INFOTAINMENT_AUTH_RESPONSE)
+        else if ((domain == UniversalMessage_Domain_DOMAIN_INFOTAINMENT) && (current_command.state == BLECommandState::WAITING_FOR_INFOTAINMENT_AUTH_RESPONSE))
         {
           ESP_LOGV(TAG, "[%s] INFOTAINMENT authenticated, ready to execute", current_command.execute_name.c_str());
           current_command.state = BLECommandState::READY;
@@ -1717,7 +1729,7 @@ namespace esphome
       }
     }
     
-    int TeslaBLEVehicle::handleInfoCarServerResponse (CarServer_Response carserver_response)
+    int TeslaBLEVehicle::handleInfoCarServerResponse (const CarServer_Response& carserver_response)
     {
       switch (carserver_response.which_response_msg)
       {
@@ -1732,7 +1744,7 @@ namespace esphome
             */
             if (carserver_response.response_msg.vehicleData.charge_state.which_optional_usable_battery_level)
             {
-              setCarBatteryLevel (carserver_response.response_msg.vehicleData.charge_state.optional_usable_battery_level.usable_battery_level);
+              publishSensor (NumericSensorId::ChargeState, carserver_response.response_msg.vehicleData.charge_state.optional_usable_battery_level.usable_battery_level);
             }
             else
             {
@@ -1740,7 +1752,7 @@ namespace esphome
             }
             if (carserver_response.response_msg.vehicleData.charge_state.which_optional_charger_actual_current)
             {            
-              setChargeCurrent (carserver_response.response_msg.vehicleData.charge_state.optional_charger_actual_current.charger_actual_current);
+              publishSensor (NumericSensorId::ChargeCurrent, carserver_response.response_msg.vehicleData.charge_state.optional_charger_actual_current.charger_actual_current);
             }
             else
             {
@@ -1748,7 +1760,7 @@ namespace esphome
             }
             if (carserver_response.response_msg.vehicleData.charge_state.which_optional_charger_voltage)
             {            
-              setChargeVoltage (carserver_response.response_msg.vehicleData.charge_state.optional_charger_voltage.charger_voltage);
+              publishSensor (NumericSensorId::ChargeVoltage, carserver_response.response_msg.vehicleData.charge_state.optional_charger_voltage.charger_voltage);
             }
             else
             {
@@ -1756,7 +1768,7 @@ namespace esphome
             }
             if (carserver_response.response_msg.vehicleData.charge_state.which_optional_charger_power)
             {            
-              setChargePower (carserver_response.response_msg.vehicleData.charge_state.optional_charger_power.charger_power);
+              publishSensor (NumericSensorId::ChargePower, carserver_response.response_msg.vehicleData.charge_state.optional_charger_power.charger_power);
             }
             else
             {
@@ -1764,7 +1776,7 @@ namespace esphome
             }
             if (carserver_response.response_msg.vehicleData.charge_state.which_optional_charge_limit_soc)
             {            
-              setMaxSoc (carserver_response.response_msg.vehicleData.charge_state.optional_charge_limit_soc.charge_limit_soc);
+              publishSensor (NumericSensorId::MaxSoc, carserver_response.response_msg.vehicleData.charge_state.optional_charge_limit_soc.charge_limit_soc);
             }
             else
             {
@@ -1772,7 +1784,7 @@ namespace esphome
             }
             if (carserver_response.response_msg.vehicleData.charge_state.which_optional_charging_amps)
             {            
-              setMaxAmps (carserver_response.response_msg.vehicleData.charge_state.optional_charging_amps.charging_amps);
+              publishSensor (NumericSensorId::MaxAmps, carserver_response.response_msg.vehicleData.charge_state.optional_charging_amps.charging_amps);
             }
             else
             {
@@ -1780,7 +1792,7 @@ namespace esphome
             }
             if (carserver_response.response_msg.vehicleData.charge_state.which_optional_minutes_to_charge_limit)
             {            
-              setMinsToLimit (carserver_response.response_msg.vehicleData.charge_state.optional_minutes_to_charge_limit.minutes_to_charge_limit);
+              publishSensor (NumericSensorId::MinsToLimit, carserver_response.response_msg.vehicleData.charge_state.optional_minutes_to_charge_limit.minutes_to_charge_limit);
             }
             else
             {
@@ -1788,7 +1800,7 @@ namespace esphome
             }
             if (carserver_response.response_msg.vehicleData.charge_state.which_optional_battery_range)
             {            
-              setBatteryRange (carserver_response.response_msg.vehicleData.charge_state.optional_battery_range.battery_range);
+              publishSensor (NumericSensorId::BatteryRange, carserver_response.response_msg.vehicleData.charge_state.optional_battery_range.battery_range);
             }
             else
             {
@@ -1796,7 +1808,7 @@ namespace esphome
             }
             if (carserver_response.response_msg.vehicleData.charge_state.which_optional_charge_energy_added)
             {            
-              setChargeEnergyAdded (carserver_response.response_msg.vehicleData.charge_state.optional_charge_energy_added.charge_energy_added);
+              publishSensor (NumericSensorId::ChargeEnergyAdded, carserver_response.response_msg.vehicleData.charge_state.optional_charge_energy_added.charge_energy_added);
             }
             else
             {
@@ -1804,11 +1816,27 @@ namespace esphome
             }
             if (carserver_response.response_msg.vehicleData.charge_state.which_optional_charge_miles_added_ideal)
             {            
-              setChargeMilesAdded (carserver_response.response_msg.vehicleData.charge_state.optional_charge_miles_added_ideal.charge_miles_added_ideal);
+              publishSensor (NumericSensorId::ChargeDistanceAdded, carserver_response.response_msg.vehicleData.charge_state.optional_charge_miles_added_ideal.charge_miles_added_ideal);
             }
             else
             {
               ESP_LOGI (TAG, "No data to set miles added");
+            }
+            if (carserver_response.response_msg.vehicleData.charge_state.which_optional_charger_phases)
+            {            
+              publishSensor (NumericSensorId::ChargerPhases, carserver_response.response_msg.vehicleData.charge_state.optional_charger_phases.charger_phases);
+            }
+            else
+            {
+              ESP_LOGI (TAG, "No data to set charger phases");
+            }
+            if (carserver_response.response_msg.vehicleData.charge_state.which_optional_charge_rate_mph)
+            {            
+              publishSensor (NumericSensorId::ChargeRate, carserver_response.response_msg.vehicleData.charge_state.optional_charge_rate_mph.charge_rate_mph);
+            }
+            else
+            {
+              ESP_LOGI (TAG, "No data to set charge rate");
             }
             if (carserver_response.response_msg.vehicleData.charge_state.has_charging_state)
             {            
@@ -1816,18 +1844,18 @@ namespace esphome
               {
                 case CarServer_ChargeState_ChargingState_Starting_tag:
                 case CarServer_ChargeState_ChargingState_Charging_tag:
-                  if (car_is_charging_ == 0) {car_is_charging_ = 1;} // Set to 1 when charging starts to trigger immediate poll
+                  if (car_is_charging_ == NotCharging) {car_is_charging_ = ChargingJustStarted;} // Set to 1 when charging starts to trigger immediate poll
                   break;
                 case CarServer_ChargeState_ChargingState_Unknown_tag:
                 case CarServer_ChargeState_ChargingState_Disconnected_tag:
                 case CarServer_ChargeState_ChargingState_NoPower_tag:
                 case CarServer_ChargeState_ChargingState_Stopped_tag:
-                  MinsToLimitStateSensor->publish_state (NAN); // If not charging, minutes to limit makes no sense (and run into default as not charging)
+                  publishSensor (NumericSensorId::MinsToLimit, NAN); // If not charging, minutes to limit makes no sense
                 default:
-                  car_is_charging_ = 0;
+                  car_is_charging_ = NotCharging;
               }
               std::string charging_state_text = lookup_charging_state (carserver_response.response_msg.vehicleData.charge_state.charging_state.which_type);
-              setChargingState (charging_state_text.c_str());
+              publishSensor (TextSensorId::ChargingState, charging_state_text.c_str());
             }
             else
             {
@@ -1836,20 +1864,20 @@ namespace esphome
             if (carserver_response.response_msg.vehicleData.charge_state.has_charge_port_latch)
             {            
               std::string charge_port_latch_state_text = lookup_charge_port_latch_state (carserver_response.response_msg.vehicleData.charge_state.charge_port_latch.which_type);
-              setChargePortLatchState (charge_port_latch_state_text.c_str());
+              publishSensor (TextSensorId::ChargePortLatchState, charge_port_latch_state_text.c_str());
             }
             else
             {
               ESP_LOGI (TAG, "No data to set charge port latch");
             }
-            setLastUpdateState (ctime(&timestamp));
+            publishSensor (TextSensorId::LastUpdate, ctime(&timestamp));
           }
           else if (carserver_response.response_msg.vehicleData.has_drive_state)
           {
             if (carserver_response.response_msg.vehicleData.drive_state.has_shift_state)
             {
               std::string shift_state_text = lookup_shift_state (carserver_response.response_msg.vehicleData.drive_state.shift_state.which_type);
-              setCarShiftState (shift_state_text.c_str());
+              publishSensor (TextSensorId::ShiftState, shift_state_text.c_str());
             }
             else
             {
@@ -1857,19 +1885,19 @@ namespace esphome
             }
             if (carserver_response.response_msg.vehicleData.drive_state.which_optional_odometer_in_hundredths_of_a_mile)
             {
-              setCarOdometer (carserver_response.response_msg.vehicleData.drive_state.optional_odometer_in_hundredths_of_a_mile.odometer_in_hundredths_of_a_mile);
+              publishSensor (NumericSensorId::Odometer, carserver_response.response_msg.vehicleData.drive_state.optional_odometer_in_hundredths_of_a_mile.odometer_in_hundredths_of_a_mile);
             }
             else
             {
               ESP_LOGI (TAG, "No data to set odometer");
             }
-            setLastUpdateState (ctime(&timestamp));
+            publishSensor (TextSensorId::LastUpdate, ctime(&timestamp));
           }
           else if (carserver_response.response_msg.vehicleData.has_climate_state)
           {
             if (carserver_response.response_msg.vehicleData.climate_state.which_optional_is_climate_on)
             {
-              setClimateState (carserver_response.response_msg.vehicleData.climate_state.optional_is_climate_on.is_climate_on);
+              publishSensor (BinarySensorId::IsClimateOn, carserver_response.response_msg.vehicleData.climate_state.optional_is_climate_on.is_climate_on);
             }
               else
             {
@@ -1877,7 +1905,7 @@ namespace esphome
             }
             if (carserver_response.response_msg.vehicleData.climate_state.which_optional_inside_temp_celsius)
             {
-              setInsideTemp (carserver_response.response_msg.vehicleData.climate_state.optional_inside_temp_celsius.inside_temp_celsius);
+              publishSensor (NumericSensorId::InternalTemp, carserver_response.response_msg.vehicleData.climate_state.optional_inside_temp_celsius.inside_temp_celsius);
             }
             else
             {
@@ -1885,7 +1913,7 @@ namespace esphome
             }
             if (carserver_response.response_msg.vehicleData.climate_state.which_optional_outside_temp_celsius)
             {
-              setOutsideTemp (carserver_response.response_msg.vehicleData.climate_state.optional_outside_temp_celsius.outside_temp_celsius);
+              publishSensor (NumericSensorId::ExternalTemp, carserver_response.response_msg.vehicleData.climate_state.optional_outside_temp_celsius.outside_temp_celsius);
             }
             else
             {
@@ -1894,19 +1922,19 @@ namespace esphome
             if (carserver_response.response_msg.vehicleData.climate_state.has_defrost_mode)
             {
               std::string defrost_state_text = lookup_defrost_state (carserver_response.response_msg.vehicleData.climate_state.defrost_mode.which_type);
-              setDefrostState (defrost_state_text.c_str());
+              publishSensor (TextSensorId::DefrostState, defrost_state_text.c_str());
             }
             else
             {
               ESP_LOGI (TAG, "No data to set defrost mode");
             }
-            setLastUpdateState (ctime(&timestamp));
+            publishSensor (TextSensorId::LastUpdate, ctime(&timestamp));
           }
           else if (carserver_response.response_msg.vehicleData.has_closures_state)
           {
             if (carserver_response.response_msg.vehicleData.closures_state.which_optional_door_open_trunk_rear)
             {
-              setBootState (carserver_response.response_msg.vehicleData.closures_state.optional_door_open_trunk_rear.door_open_trunk_rear);
+              publishSensor (BinarySensorId::IsBootOpen, carserver_response.response_msg.vehicleData.closures_state.optional_door_open_trunk_rear.door_open_trunk_rear);
             }
             else
             {
@@ -1914,7 +1942,7 @@ namespace esphome
             }
             if (carserver_response.response_msg.vehicleData.closures_state.which_optional_window_open_driver_front)
             {
-              setFrunkState (carserver_response.response_msg.vehicleData.closures_state.optional_door_open_trunk_front.door_open_trunk_front);
+              publishSensor (BinarySensorId::IsFrunkOpen, carserver_response.response_msg.vehicleData.closures_state.optional_door_open_trunk_front.door_open_trunk_front);
             }
             else
             {
@@ -1925,7 +1953,7 @@ namespace esphome
                 carserver_response.response_msg.vehicleData.closures_state.which_optional_window_open_passenger_rear and
                 carserver_response.response_msg.vehicleData.closures_state.which_optional_window_open_passenger_front)
             {
-            setWindowsState (
+            publishSensor (BinarySensorId::WindowsState,
               carserver_response.response_msg.vehicleData.closures_state.optional_window_open_driver_front.window_open_driver_front or
               carserver_response.response_msg.vehicleData.closures_state.optional_window_open_passenger_front.window_open_passenger_front or
               carserver_response.response_msg.vehicleData.closures_state.optional_window_open_driver_rear.window_open_driver_rear or
@@ -1936,7 +1964,7 @@ namespace esphome
             {
               ESP_LOGI (TAG, "No data to set windows state");
             }
-            setLastUpdateState (ctime(&timestamp));
+            publishSensor (TextSensorId::LastUpdate, ctime(&timestamp));
           }
           else if (carserver_response.response_msg.vehicleData.has_tire_pressure_state)
           {
@@ -1945,23 +1973,16 @@ namespace esphome
                 carserver_response.response_msg.vehicleData.tire_pressure_state.which_optional_tpms_pressure_rl and
                 carserver_response.response_msg.vehicleData.tire_pressure_state.which_optional_tpms_pressure_rr)
             {
-              setTpmsTyrePressureFl (carserver_response.response_msg.vehicleData.tire_pressure_state.optional_tpms_pressure_fl.tpms_pressure_fl);
-              setTpmsTyrePressureFr (carserver_response.response_msg.vehicleData.tire_pressure_state.optional_tpms_pressure_fr.tpms_pressure_fr);
-              setTpmsTyrePressureRl (carserver_response.response_msg.vehicleData.tire_pressure_state.optional_tpms_pressure_rl.tpms_pressure_rl);
-              setTpmsTyrePressureRr (carserver_response.response_msg.vehicleData.tire_pressure_state.optional_tpms_pressure_rr.tpms_pressure_rr);
+              publishSensor (NumericSensorId::TpmsFl, carserver_response.response_msg.vehicleData.tire_pressure_state.optional_tpms_pressure_fl.tpms_pressure_fl);
+              publishSensor (NumericSensorId::TpmsFr, carserver_response.response_msg.vehicleData.tire_pressure_state.optional_tpms_pressure_fr.tpms_pressure_fr);
+              publishSensor (NumericSensorId::TpmsRl, carserver_response.response_msg.vehicleData.tire_pressure_state.optional_tpms_pressure_rl.tpms_pressure_rl);
+              publishSensor (NumericSensorId::TpmsRr, carserver_response.response_msg.vehicleData.tire_pressure_state.optional_tpms_pressure_rr.tpms_pressure_rr);
             }
             else
             {
               ESP_LOGI (TAG, "No data to set tyre pressures");
             }
-            setLastUpdateState (ctime(&timestamp));
-          }
-          else if (carserver_response.response_msg.vehicleData.has_tire_pressure_state)
-          {
-            setTpmsTyrePressureFl (carserver_response.response_msg.vehicleData.tire_pressure_state.optional_tpms_pressure_fl.tpms_pressure_fl);
-            setTpmsTyrePressureFr (carserver_response.response_msg.vehicleData.tire_pressure_state.optional_tpms_pressure_fr.tpms_pressure_fr);
-            setTpmsTyrePressureRl (carserver_response.response_msg.vehicleData.tire_pressure_state.optional_tpms_pressure_rl.tpms_pressure_rl);
-            setTpmsTyrePressureRr (carserver_response.response_msg.vehicleData.tire_pressure_state.optional_tpms_pressure_rr.tpms_pressure_rr);
+            publishSensor (TextSensorId::LastUpdate, ctime(&timestamp));
           }
           break;
         case 0: // No data in the response but presumably otherwise ok (controls)
@@ -1978,28 +1999,28 @@ namespace esphome
       switch (vehicleStatus.vehicleSleepStatus)
       {
       case VCSEC_VehicleSleepStatus_E_VEHICLE_SLEEP_STATUS_AWAKE:
-        this->updateIsAsleep(false);
+        publishSensor (BinarySensorId::IsAsleep, false);
         break;
       case VCSEC_VehicleSleepStatus_E_VEHICLE_SLEEP_STATUS_ASLEEP:
-        this->updateIsAsleep(true);
+        publishSensor (BinarySensorId::IsAsleep, true);
         break;
       case VCSEC_VehicleSleepStatus_E_VEHICLE_SLEEP_STATUS_UNKNOWN:
       default:
-        this->updateIsAsleep(NAN);
+        publishSensor (BinarySensorId::IsAsleep, NAN);
         break;
       } // switch vehicleSleepStatus
 
       switch (vehicleStatus.userPresence)
       {
       case VCSEC_UserPresence_E_VEHICLE_USER_PRESENCE_PRESENT:
-        this->updateIsUserPresent(true);
+        publishSensor (BinarySensorId::IsUserPresent, true);
         break;
       case VCSEC_UserPresence_E_VEHICLE_USER_PRESENCE_NOT_PRESENT:
-        this->updateIsUserPresent(false);
+        publishSensor (BinarySensorId::IsUserPresent, false);
         break;
       case VCSEC_UserPresence_E_VEHICLE_USER_PRESENCE_UNKNOWN:
       default:
-        this->updateIsUserPresent(NAN);
+        publishSensor (BinarySensorId::IsUserPresent, NAN);
         break;
       } // switch userPresence
 
@@ -2007,32 +2028,32 @@ namespace esphome
       {
       case VCSEC_VehicleLockState_E_VEHICLELOCKSTATE_UNLOCKED:
       case VCSEC_VehicleLockState_E_VEHICLELOCKSTATE_SELECTIVE_UNLOCKED:
-        this->updateisUnlocked(true);
+        publishSensor (BinarySensorId::IsUnlocked, true);
         break;
       case VCSEC_VehicleLockState_E_VEHICLELOCKSTATE_LOCKED:
       case VCSEC_VehicleLockState_E_VEHICLELOCKSTATE_INTERNAL_LOCKED:
-        this->updateisUnlocked(false);
+        publishSensor (BinarySensorId::IsUnlocked, false);
         break;
       default:
-        this->updateisUnlocked(NAN);
+        publishSensor (BinarySensorId::IsUnlocked, NAN);
         break;
       } // switch vehicleLockState
 
       if (vehicleStatus.vehicleSleepStatus == VCSEC_VehicleSleepStatus_E_VEHICLE_SLEEP_STATUS_AWAKE)
       {
-        if (!this->isChargeFlapOpenSensor->has_state())
+        if (!binary_sensors_[static_cast<size_t>(BinarySensorId::IsChargeFlapOpen)]->has_state())
         {
-          this->setChargeFlapHasState(true);
+          publishSensor (BinarySensorId::IsChargeFlapOpen, true);
         }
         if (vehicleStatus.has_closureStatuses)
         {
           switch (vehicleStatus.closureStatuses.chargePort)
           {
           case VCSEC_ClosureState_E_CLOSURESTATE_OPEN:
-            this->updateIsChargeFlapOpen(true);
+            publishSensor (BinarySensorId::IsChargeFlapOpen, true);
             break;
           case VCSEC_ClosureState_E_CLOSURESTATE_CLOSED:
-            this->updateIsChargeFlapOpen(false);
+            publishSensor (BinarySensorId::IsChargeFlapOpen, false);
             break;
           default:
             break;
@@ -2040,7 +2061,7 @@ namespace esphome
         }
         else
         {
-          this->updateIsChargeFlapOpen(false);
+          publishSensor (BinarySensorId::IsChargeFlapOpen, false);
         }
       }
 
@@ -2065,9 +2086,9 @@ namespace esphome
         {
           ESP_LOGI(TAG, "Connected successfully!");
           this->status_clear_warning();
-//          this->setSensors(true);  // Setting these true on connection suggests they've been read, they haven't!
-          ble_disconnected_ = 0;
+          ble_disconnected_ = BleConnected;
           number_updates_since_connection_ = 0; //Reset update loop counter
+          publishSensor (NumericSensorId::BleDisconnectedTime, 0);
 
           // generate random connection id 16 bytes
           pb_byte_t connection_id[16];
@@ -2094,14 +2115,13 @@ namespace esphome
         ESP_LOGW(TAG, "BLE connection closed!");
         this->node_state = espbt::ClientState::IDLE;
 
+        ble_disconnected_ = BleDisconnected;
         // set binary sensors to unknown
         if (ble_disconnected_min_time_ == 0)
         { // If delay time zero, then set Unknown on any disconnect however fleeting
             this->setSensors(false);
-            this->setInfotainmentSensors (false);
-            this->setChargeFlapHasState(false);
+            ble_disconnected_ = BleDisconnectedUnknownsSet;
         }
-        ble_disconnected_ = 1;
         ble_disconnected_time_ = millis();
 
         this->status_set_warning("BLE connection closed");
