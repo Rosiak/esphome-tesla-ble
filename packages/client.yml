@@ -135,6 +135,10 @@ tesla_ble_vehicle:
     id: "charge_rate"
     name: "Charge rate"
     disabled_by_default: true
+  driver_temp:
+    id: "driver_temp"
+    name: "Climate temperature" # although it's the driver side temperature setting, use it for the overall climate setting
+    disabled_by_default: true
 
 button:
   - platform: template
@@ -455,6 +459,27 @@ number:
         return id(max_soc).state;
       }
       else return (0);
+  - platform: template
+    name: "Climate temperature"
+    id: set_climate_temp
+    icon: mdi:thermometer-lines
+    unit_of_measurement: "°C"
+    mode: slider
+    update_interval: 2s
+    min_value: 15
+    max_value: 28
+    step: 1
+    set_action:
+      - lambda: |-
+          int var_x = static_cast<int>(x);
+          id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage(tesla_ble_vehicle::BLE_CarServer_VehicleAction::SET_CLIMATE_TEMP, var_x);
+    lambda: |-
+      if (id(driver_temp).has_state())
+      {
+        return id(driver_temp).state;
+      }
+      else return (0);
+    disabled_by_default: true
 
   - platform: template
     id: post_wake_poll_time
