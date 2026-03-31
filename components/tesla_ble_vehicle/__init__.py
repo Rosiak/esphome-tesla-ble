@@ -88,6 +88,8 @@ SENSORS = {
         icon = "mdi:thermometer", device_class = sensor.DEVICE_CLASS_TEMPERATURE, accuracy_decimals = 1, unit_of_measurement = "°C",),
     "external_temp": numeric (NumericSensorId.ExternalTemp,
         icon = "mdi:sun-thermometer-outline", device_class = sensor.DEVICE_CLASS_TEMPERATURE, accuracy_decimals = 1, unit_of_measurement = "°C",),
+    "driver_temp": numeric (NumericSensorId.DriverTemp,
+        icon = "mdi:thermometer", device_class = sensor.DEVICE_CLASS_TEMPERATURE, accuracy_decimals = 1, unit_of_measurement = "°C",),
     "tpms_pressure_fl": numeric (NumericSensorId.TpmsFl,
         icon = "mdi:tire", device_class = sensor.DEVICE_CLASS_PRESSURE, accuracy_decimals = 1, unit_of_measurement = "bar",),
     "tpms_pressure_fr": numeric (NumericSensorId.TpmsFr,
