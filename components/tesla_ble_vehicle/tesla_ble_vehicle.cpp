@@ -1919,6 +1919,14 @@ if (ble_disconnected_ != BleConnected) // While disconnected update duration of 
             {
               ESP_LOGI (TAG, "No data to set outside temperature");
             }
+            if (carserver_response.response_msg.vehicleData.climate_state.which_optional_driver_temp_setting)
+            {
+              publishSensor (NumericSensorId::DriverTemp, carserver_response.response_msg.vehicleData.climate_state.optional_driver_temp_setting.driver_temp_setting);
+            }
+            else
+            {
+              ESP_LOGI (TAG, "No data to set driver temperature");
+            }
             if (carserver_response.response_msg.vehicleData.climate_state.has_defrost_mode)
             {
               std::string defrost_state_text = lookup_defrost_state (carserver_response.response_msg.vehicleData.climate_state.defrost_mode.which_type);
