@@ -187,7 +187,7 @@ button:
 
   - platform: template
     id: btn_media_play
-    name: Media play⁄pause
+    name: Media play⁄pause # Normal / is not allowed here so use alternative fraction symbol
     icon: mdi:play-pause
     on_press:
       - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (tesla_ble_vehicle::BLE_CarServer_VehicleAction::MEDIA_PLAY, 0);
