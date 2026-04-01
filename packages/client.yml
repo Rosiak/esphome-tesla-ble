@@ -186,6 +186,30 @@ button:
     disabled_by_default: true
 
   - platform: template
+    id: btn_media_play
+    name: Media play⁄pause
+    icon: mdi:play-pause
+    on_press:
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (tesla_ble_vehicle::BLE_CarServer_VehicleAction::MEDIA_PLAY, 0);
+    disabled_by_default: true
+
+  - platform: template
+    id: btn_media_next_track
+    name: Media next track
+    icon: mdi:skip-next
+    on_press:
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (tesla_ble_vehicle::BLE_CarServer_VehicleAction::MEDIA_NEXT_TRACK, 0);
+    disabled_by_default: true
+
+  - platform: template
+    id: btn_media_previous_track
+    name: Media previous track
+    icon: mdi:skip-previous
+    on_press:
+      - lambda: id(tesla_ble_vehicle_id)->sendCarServerVehicleActionMessage (tesla_ble_vehicle::BLE_CarServer_VehicleAction::MEDIA_PREVIOUS_TRACK, 0);
+    disabled_by_default: true
+
+  - platform: template
     id: btn_regenerate_key
     name: Regenerate key
     icon: mdi:key-change
