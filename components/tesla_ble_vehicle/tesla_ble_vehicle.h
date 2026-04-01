@@ -58,6 +58,9 @@ namespace esphome
             SET_WINDOWS_SWITCH,
             DEFROST_CAR,
             SET_CLIMATE_TEMP,
+            MEDIA_PLAY,
+            MEDIA_NEXT_TRACK,
+            MEDIA_PREVIOUS_TRACK,
             _COUNT  // sentinel value to get count of entries
         };
         enum class AllowedMsg // The type of messages to send
@@ -95,7 +98,7 @@ namespace esphome
             GetOnSet getOnSet;
             int numberUpdatesBetweenGets; // Only used for GetVehicleDataMessage
         };
-        static constexpr std::array<ActionMessageDetail, 20> ACTION_SPECIFICS // Don't forget to increase the size when adding a row
+        static constexpr std::array<ActionMessageDetail, 23> ACTION_SPECIFICS // Don't forget to increase the size when adding a row
         {{
             {BLE_CarServer_VehicleAction::DO_NOTHING,                       "",                          AllowedMsg::Empty,                 0,                                                              GetOnSet::Invalid,         0},
             {BLE_CarServer_VehicleAction::GET_CHARGE_STATE,                 "getChargeState",            AllowedMsg::GetVehicleDataMessage, CarServer_GetVehicleData_getChargeState_tag,                    GetOnSet::Invalid,         1},
@@ -116,7 +119,10 @@ namespace esphome
             {BLE_CarServer_VehicleAction::FLASH_LIGHT,                      "flashLight",                AllowedMsg::VehicleActionMessage,  CarServer_VehicleAction_vehicleControlFlashLightsAction_tag,    GetOnSet::Invalid,         0},
             {BLE_CarServer_VehicleAction::SET_WINDOWS_SWITCH,               "setWindowsSwitch",          AllowedMsg::VehicleActionMessage,  CarServer_VehicleAction_vehicleControlWindowAction_tag,         GetOnSet::GetClosureState, 0},
             {BLE_CarServer_VehicleAction::DEFROST_CAR,                      "defrostCar",                AllowedMsg::VehicleActionMessage,  CarServer_VehicleAction_hvacSetPreconditioningMaxAction_tag,    GetOnSet::GetClimateState, 0},
-            {BLE_CarServer_VehicleAction::SET_CLIMATE_TEMP,                 "setClimateTemp",            AllowedMsg::VehicleActionMessage,  CarServer_VehicleAction_hvacTemperatureAdjustmentAction_tag,    GetOnSet::GetClimateState, 0}
+            {BLE_CarServer_VehicleAction::SET_CLIMATE_TEMP,                 "setClimateTemp",            AllowedMsg::VehicleActionMessage,  CarServer_VehicleAction_hvacTemperatureAdjustmentAction_tag,    GetOnSet::GetClimateState, 0},
+            {BLE_CarServer_VehicleAction::MEDIA_PLAY,                       "mediaPlay",                 AllowedMsg::VehicleActionMessage,  CarServer_VehicleAction_mediaPlayAction_tag,                    GetOnSet::Invalid,         0},
+            {BLE_CarServer_VehicleAction::MEDIA_NEXT_TRACK,                 "mediaNextTrack",            AllowedMsg::VehicleActionMessage,  CarServer_VehicleAction_mediaNextTrack_tag,                     GetOnSet::Invalid,         0},
+            {BLE_CarServer_VehicleAction::MEDIA_PREVIOUS_TRACK,             "mediaPreviousTrack",        AllowedMsg::VehicleActionMessage,  CarServer_VehicleAction_mediaPreviousTrack_tag,                 GetOnSet::Invalid,         0}
         }};
         static_assert(ACTION_SPECIFICS.size() == static_cast<std::size_t>(BLE_CarServer_VehicleAction::_COUNT), "ACTION_SPECIFICS out of sync with enum");
         static const char *const TAG = "tesla_ble_vehicle";
