@@ -56,6 +56,10 @@ These are implemented as switches, covers, buttons or numbers. Where indicated, 
 - Unlock charge port (button)
 - Vent/close windows (cover)
 - Wake up vehicle (button)
+- Set climate temperature (number). Note this sets both the driver and passenger temperatures. This is disabled by default.
+- Media next track (button). This is disabled by default.
+- Media previous track (button). This is disabled by default.
+- Media play/plause (button). This is disabled by default.
 
 ### Vehicle Information Sensors
 
@@ -79,6 +83,7 @@ There are two categories, those available even when asleep and those only when a
   - Charger phases (1 or 3). Disabled by default.
   - Charging state (eg Stopped, Charging, Complete)
   - Climate on/off
+  - Climate temperature (°C). Note this is actually the driver's temperature setting.
   - Current limit setting (Amps)
   - Defrost state on/off
   - Doors locked/unlocked
