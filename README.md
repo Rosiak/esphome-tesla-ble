@@ -15,7 +15,7 @@ This project [PedroKTFC/esphome-tesla-ble](https://github.com/PedroKTFC/esphome-
 
 I've put this section at the start because it seems people don't always read all the way to the end! So please read this section at least.
 > [!TIP]
-> **Always** start from the example yaml [`tesla-ble-example.yml`](./tesla-ble.example.yml). This has been tested many times and should work in almost every case.
+> **Always** start from the example yaml [`tesla-ble.example.yml`](./tesla-ble.example.yml). This has been tested many times and should work in almost every case.
 
 If the build fails, try the following (assuming you're building using the Home Assistant ESPHome builder):
 - In the ESPHome builder UI, clean the build files (as shown in the image below) and try installing again. If that doesn't work, try the next step.
