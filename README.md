@@ -15,7 +15,7 @@ This project [PedroKTFC/esphome-tesla-ble](https://github.com/PedroKTFC/esphome-
 
 I've put this section at the start because it seems people don't always read all the way to the end! So please read this section at least.
 > [!TIP]
-> **Always** start from the example yaml [`tesla-ble-example.yml`](./tesla-ble.example.yml). This has been tested many times and should work in almost every case.
+> **Always** start from the example yaml [`tesla-ble.example.yml`](./tesla-ble.example.yml). This has been tested many times and should work in almost every case.
 
 If the build fails, try the following (assuming you're building using the Home Assistant ESPHome builder):
 - In the ESPHome builder UI, clean the build files (as shown in the image below) and try installing again. If that doesn't work, try the next step.
@@ -56,6 +56,10 @@ These are implemented as switches, covers, buttons or numbers. Where indicated, 
 - Unlock charge port (button)
 - Vent/close windows (cover)
 - Wake up vehicle (button)
+- Set climate temperature (number). Note this sets both the driver and passenger temperatures. This is disabled by default.
+- Media next track (button). This is disabled by default.
+- Media previous track (button). This is disabled by default.
+- Media play/plause (button). This is disabled by default.
 
 ### Vehicle Information Sensors
 
@@ -79,6 +83,7 @@ There are two categories, those available even when asleep and those only when a
   - Charger phases (1 or 3). Disabled by default.
   - Charging state (eg Stopped, Charging, Complete)
   - Climate on/off
+  - Climate temperature (°C). Note this is actually the driver's temperature setting.
   - Current limit setting (Amps)
   - Defrost state on/off
   - Doors locked/unlocked
