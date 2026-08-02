@@ -11,7 +11,7 @@ substitutions:
 esphome:
   project:
     name: PedroKTFC.esphome-tesla-ble
-    version: "2026.7.0"
+    version: "2026.7.0a"
   name: ${device_name}
   name_add_mac_suffix: false
   friendly_name: ${friendly_name}
@@ -24,6 +24,7 @@ esp32:
   flash_size: $flash_size
   framework:
     type: esp-idf
+  toolchain: platformio
 
 external_components:
   - source: $tesla_ble_component
